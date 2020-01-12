@@ -1,4 +1,4 @@
-export const tail = <A>([a, ...as]: A[]) => as
+export const tail = <A>([_, ...as]: A[]) => as
 export const setHead = <A>(a: A) => ([_, ...as]: A[]) => [a, ...as]
 export const drop = <A>(n: number) => (as: A[]): A[] => {
   if (n === 0) return as
@@ -13,12 +13,12 @@ export const dropWhile = <A>(n: number, f: (_:A) => boolean) => (as: A[]): A[] =
   }
   return as
 }
-export const foldRight = <A, B>(f:(_:A,__:B) => B, b: B) => ([a, ...as]: A[]): B => {
+export const foldRight = <A, B>(f:(_:A, __:B) => B, b: B) => ([a, ...as]: A[]): B => {
   if (!a) return b
   if (as.length === 0) return f(a, b)
   return f(a, foldRight(f, b)(as))
 }
-export const foldLeft = <A, B>(f:(_:B,__:A) => B, b: B) => ([a, ...as]: A[]): B => {
+export const foldLeft = <A, B>(f:(_:B, __:A) => B, b: B) => ([a, ...as]: A[]): B => {
   if (!a) return b
   if (as.length === 0) return f(b, a)
   return f(foldLeft(f, b)(as), a)

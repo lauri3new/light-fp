@@ -21,16 +21,6 @@ export interface None<A> extends Option<A> {
 
 type Some<A> = Option<A>
 
-export const Some = <A>(a: A): Option<A> => ({
-  _tag: 'some',
-  get: () => a,
-  map: f => Some(f(a)),
-  getOrElse: _ => a,
-  orElse: () => Some(a),
-  flatMap: f => f(a),
-  filter: f => f(a) ? Some(a) : None()
-})
-
 export const None = <A>(): None<A> => ({
   _tag: 'none',
   get: () => undefined,
@@ -38,7 +28,17 @@ export const None = <A>(): None<A> => ({
   getOrElse: b => b,
   orElse: b => b,
   flatMap: f => None<A>(),
-  filter: f => None()
+  filter: f => None(),
+})
+
+export const Some = <A>(a: A): Option<A> => ({
+  _tag: 'some',
+  get: () => a,
+  map: f => Some(f(a)),
+  getOrElse: _ => a,
+  orElse: () => Some(a),
+  flatMap: f => f(a),
+  filter: f => (f(a) ? Some(a) : None()),
 })
 
 export const isNone = <A>(a: Option<A>): a is None<A> => a._tag === 'none'

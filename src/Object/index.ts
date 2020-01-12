@@ -1,4 +1,4 @@
-import { when } from ".."
+import { when } from '..'
 
 // export const tail = <A>([a, ...as]: A[]) => as
 // export const setHead = <A>(a: A) => ([_, ...as]: A[]) => [a, ...as]
@@ -7,12 +7,10 @@ import { when } from ".."
 //   const [a, ...rest] = as
 //   return drop<A>(n - 1)(rest)
 // }
-export const map = <A, B> (f:(_:A) => B) => (as: { [key: string]: A }): { [key: string]: B } => {
-  return Object.keys(as).reduce((acc: { [key: string]: B}, key) => {
-    acc[key] = f(as[key])
-    return acc
-  }, {})
-}
+export const map = <A, B> (f:(_:A) => B) => (as: { [key: string]: A }): { [key: string]: B } => Object.keys(as).reduce((acc: { [key: string]: B}, key) => {
+  acc[key] = f(as[key])
+  return acc
+}, {})
 
 export const mapWhen = <A, B> (g:(_:A) => boolean) => (f:(_:A) => B) => (as: { [key: string]: A }): { [key: string]: A | B } => map<A, A | B>(when<A, B>(g)(f))(as)
 

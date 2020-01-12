@@ -21,15 +21,11 @@ module.exports = {
   ],
   rules: {
     'semi': ['error', 'never'],
-    "@typescript-eslint/member-delimiter-style": ["error", {
-      multiline: {
-        delimiter: 'none',
-        requireLast: true,
-      },
-      singleline: {
-        delimiter: 'none',
-        requireLast: false,
-      },
-    }]
+    'arrow-parens': 'off',
+    'no-unused-vars': 'off',
+    'import/no-unresolved': 'warn',
+    'import/extensions': 'warn',
+    'max-len': 'warn',
+    'no-underscore-dangle': 'off'
   },
 };

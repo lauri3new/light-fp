@@ -34,7 +34,7 @@ export const Right = <A>(a: A): Either<any, A> => ({
 export const Left = <A>(a: A): Left<A, any> => ({
   _tag: 'none',
   get: () => a,
-  orElse: a => a,
+  orElse: b => b,
   map: _ => Left<A>(a),
   flatMap: _ => Left<A>(a),
 })
