@@ -1,6 +1,6 @@
 ## -- work in progress --
 
-# lauriefp
+# laurie-fp
 A basic Typescript functional programming library.
 
 This library provides typed general helper functions for Arrays, Objects, control flow, function composition, Option and Either data types amongst other things.
