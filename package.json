@@ -10,7 +10,7 @@
     "test": "echo \"Warn: no test specified\" && exit 0",
     "build": "tsc",
     "lint": "eslint './src/**/*'",
-    "prepublishOnly" : "npm test && npm run lint"
+    "prepublishOnly" : "npm test && npm run lint && npm run build"
   },
   "author": "Laurence Newman",
   "license": "ISC",
