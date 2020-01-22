@@ -1,6 +1,8 @@
 
 import { Either, Right, Left } from '../Either'
 
+// TODO: fork and flatMap from Promise<Either<_,_>>
+
 interface PromiseEither<A, B> {
   __val: Promise<Either<A, B>>
   __tag: string

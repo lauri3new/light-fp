@@ -9,38 +9,42 @@
 // }
 
 import { Either, Right, Left } from '../Either'
+import { Future, resolve } from '../Future'
 
 interface FutureEither<A, B> {
-  __val: () => Promise<Either<A, B>>
+  __val: Future<Either<A, B>>
   __tag: string
   map: <C>(f:(_:B) => C) => FutureEither<A, C>
   flatMap: <D, C>(f:(_:B) => FutureEither<D, C>) => FutureEither<D, C>
-  fork: <C>(f: (_:B) => C, g: (_?: any) => C) => Promise<C>
+  fork: <C>(onSuccess: (_:B) => C, onFailure: (_:A) => C, onError: (_?: any) => C) => Promise<C>
 }
 
-const FutureEither = <A, B>(val: () => Promise<Either<A, B>>): FutureEither<A, B> => ({
+const FutureEither = <A, B>(val: Future<Either<A, B>>): FutureEither<A, B> => ({
   __val: val,
   __tag: 'FutureEither',
-  map: <C>(f: (_:B) => C) => FutureEither<A, C>(() => val().then(eitherA => eitherA.map(f))),
+  map: <C>(f: (_:B) => C) => FutureEither<A, C>(val.map(eitherA => eitherA.map(f))),
   flatMap: <D, C>(f: (_:B) => FutureEither<D, C>) => FutureEither<D, C>(
-    () => val().then(eitherA => f(eitherA.get()).__val()),
+    val.flatMap(eitherA => f(eitherA.get()).__val),
   ),
-  fork: <C>(f: (_:B) => C, g: (_?: any) => C): Promise<C> => val().then(a => f(a.get())).catch(e => g(e)),
+  fork: <C>(f: (_:B) => C, onFailure: (_:A) => C, g: (_?: any) => C): Promise<C> => val.fork(
+    a => f(a.get()) || onFailure(a.get()),
+    a => g(a),
+  ),
 })
 
-FutureEither(() => Promise.resolve(Right(5)))
+FutureEither(resolve(Right(5)))
   .map(a => a + 1)
   .map(a => {
     console.log(a)
     return a
   })
-  .flatMap(a => FutureEither(() => Promise.resolve(Left('doh'))))
-  .map(a => a + 1)
-  .map(a => {
-    console.log('after left', a)
-    return a
-  })
-  .fork(a => console.log('wahoo', a), a => console.log('doh', a))
+  // .flatMap(a => FutureEither(() => Promise.resolve(Left('doh'))))
+  // .map(a => a + 1)
+  // .map(a => {
+  //   console.log('after left', a)
+  //   return a
+  // })
+  // .fork(a => console.log('wahoo', a), a => console.log('doh', a))
 
 // TODO: write in terms of Future
 // TODO: write match functions for all either monads
