@@ -4,13 +4,15 @@
   "description": "typescript functional programming library",
   "repository": "https://github.com/lauri3new/light-fp",
   "main": "dist/index.js",
-  "files": ["dist/**/*"],
+  "files": [
+    "dist/**/*"
+  ],
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Warn: no test specified\" && exit 0",
     "build": "tsc",
     "lint": "eslint './src/**/*'",
-    "prepublishOnly" : "npm test && npm run lint && npm run build"
+    "prepublishOnly": "npm test && npm run lint && npm run build"
   },
   "author": "Laurence Newman",
   "license": "ISC",
@@ -21,5 +23,9 @@
     "eslint": "^6.7.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.2",
+    "express": "^4.17.1"
   }
 }
