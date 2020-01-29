@@ -1,3 +1,4 @@
+/* eslint-disable  */
 // TODO: write demo route handlers + middleware using PromiseEither
 import express, { Request, Response } from 'express'
 import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
@@ -84,7 +85,11 @@ const getUserTwo = (id: number) => PromiseEither(new Promise<Either<userErrors, 
   })
 }))
 
-const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Either<string, User[]>>((res, rej) => {
+enum friendsErrors {
+  notFound = 'friends were not found'
+}
+
+const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Either<friendsErrors, User[]>>((res, rej) => {
   setTimeout(() => {
     if (Math.random() < 0.3) {
       return res(Right([{
@@ -93,7 +98,7 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
       }]))
     }
     if (Math.random() < 0.3) {
-      return res(Left('no friends found'))
+      return res(Left(friendsErrors.notFound))
     }
     // eslint-disable-next-line no-throw-literal
     return rej(new Error('boom'))
@@ -102,13 +107,28 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
 
 const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap((ue: string) => BadRequest(ue))
 
+const mapErrors = <A, B>(a:A, f:(_:A) => B): B => f(a)
+Promise.all([1, 2, 3, 4, 5,6 ,7])
 const userHandlerTwo = handler((req: Request) => getUserTwo(1)
-  .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })).leftMap(a => BadRequest(a)))
+  .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
   .flatMapF(async user => Right(user))
-  // .flatMap(user => fromPromiseOptionF(Promise.resolve(Some(user))))
+  .flatMapF(async ({ user }) => {
+    const [ a ] = await Promise.all([
+      getFriendsByUsernameTwo(user.name).__val, getUserTwo(1).__val
+    ])
+    return a
+  })
+  .leftMap((a): Result => {
+    switch (a) {
+      case userErrors.notFound:
+        return BadRequest(userErrors.notFound)
+      case friendsErrors.notFound:
+        return BadRequest(userErrors.notFound)
+    }
+  })
   .onComplete(
     data => OK(data),
-    BadRequest,
+    r => r,
     InternalServerError,
   ))
 

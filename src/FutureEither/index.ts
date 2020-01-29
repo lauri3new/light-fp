@@ -27,7 +27,10 @@ const FutureEither = <A, B>(val: Future<Either<A, B>>): FutureEither<A, B> => ({
     val.flatMap(eitherA => f(eitherA.get()).__val),
   ),
   fork: <C>(f: (_:B) => C, onFailure: (_:A) => C, g: (_?: any) => C): Promise<C> => val.fork(
-    a => f(a.get()) || onFailure(a.get()),
+    a => a.match(
+      left => onFailure(left),
+      right => f(right),
+    ),
     a => g(a),
   ),
 })

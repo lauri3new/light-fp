@@ -26,6 +26,8 @@ module.exports = {
     'import/no-unresolved': 'warn',
     'import/extensions': 'warn',
     'max-len': 'warn',
-    'no-underscore-dangle': 'off'
+    'no-underscore-dangle': 'off',
+    // 'default-case': 'off',
+    // 'consistent-return': 'off'
   },
 };
