@@ -6,7 +6,7 @@ export interface Either<E, A> {
   orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
   leftMap:<B>(f:(_: E) => B) => Either<B, A>
   map:<B>(f:(_: A) => B) => Either<E, B>
-  flatMap:<B>(f:(_: A) => Either<E, B>) => Either<E, B>
+  flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E | EE, B>
   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B | C
 }
 
@@ -16,7 +16,7 @@ export interface Left<E, A> extends Either<E, A> {
   orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
   map:<B>(f:(_: A) => B) => Either<E, B>
   leftMap:<B>(f:(_: E) => B) => Either<B, A>
-  flatMap:<B>(f:(_: A) => Either<E, B>) => Either<E, B>
+  flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E, B>
   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B
 }
 
@@ -26,7 +26,7 @@ export interface Right<E, A> extends Either<E, A> {
   orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
   map:<B>(f:(_: A) => B) => Either<E, B>
   leftMap:<B>(f:(_: E) => B) => Either<B, A>
-  flatMap:<B>(f:(_: A) => Either<E, B>) => Either<E, B>
+  flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E | EE, B>
   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => C
 }
 

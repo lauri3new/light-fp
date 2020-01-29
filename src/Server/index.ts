@@ -102,10 +102,10 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
 
 const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap((ue: string) => BadRequest(ue))
 
-const userHandlerTwo = handler((req: Request) => orBadRequest(getUserTwo(1))
+const userHandlerTwo = handler((req: Request) => getUserTwo(1)
   .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })).leftMap(a => BadRequest(a)))
   .flatMapF(async user => Right(user))
-  .flatMap(user => fromPromiseOptionF(Promise.resolve(Some(user))))
+  // .flatMap(user => fromPromiseOptionF(Promise.resolve(Some(user))))
   .onComplete(
     data => OK(data),
     BadRequest,

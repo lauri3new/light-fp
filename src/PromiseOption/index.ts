@@ -15,7 +15,7 @@ export interface PromiseOption<A> {
 
 export const PromiseOption = <A>(val: Promise<Option<A>>): PromiseOption<A> => ({
   __val: val,
-  __tag: 'PromiseEither',
+  __tag: 'PromiseOption',
   map: <B>(f: (_:A) => B) => PromiseOption<B>(val.then(optionA => optionA.map(f))),
   flatMap: <B>(f: (_:A) => PromiseOption<B>) => PromiseOption<B>(
     val.then(option => option.match(
