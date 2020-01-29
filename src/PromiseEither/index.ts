@@ -1,5 +1,7 @@
 
 import { Either, Right, Left } from '../Either'
+import { Option, Some, None } from '../Option'
+import { PromiseOption } from '../PromiseOption'
 
 // TODO: fork and flatMap from Promise<Either<_,_>>
 
@@ -43,16 +45,17 @@ export const sequence = <A, B>(as: PromiseEither<A, B>[]): PromiseEither<A, B[]>
   (acc, item) => item.flatMap(ia => acc.flatMapF(iacc => Promise.resolve(Right([...iacc, ia])))), (PromiseEither(Promise.resolve(Right<any>([])))),
 )
 
-let a = PromiseEither(Promise.resolve(Right(5)))
+export const fromPromiseOption = <A>(poa: PromiseOption<A>) => PromiseEither<undefined, A>(poa.onComplete(
+  someA => Right(someA),
+  () => Left(undefined),
+  error => { throw error },
+))
 
-for (let i = 0; i < 1000000; i += 1) {
-  a = a.map(b => b + 1)
-}
+export const fromPromiseOptionF = <A>(poa: Promise<Option<A>>) => PromiseEither<undefined, A>(poa.then(
+  optA => optA.match(
+    someA => Right(someA),
+    () => Left(undefined),
+  ),
+))
 
-const log = <A>(b:A) => {
-  console.log(b)
-  return b
-}
-
-a.map(log)
-console.log('wha?')
+fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))

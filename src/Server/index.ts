@@ -1,10 +1,11 @@
 // TODO: write demo route handlers + middleware using PromiseEither
 import express, { Request, Response } from 'express'
-import { PromiseEither, sequence } from '../PromiseEither'
+import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
   Result, OK, BadRequest, InternalServerError,
 } from './result'
+import { Some } from '../Option'
 
 const app = express()
 
@@ -99,10 +100,12 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
   })
 }))
 
-const userHandlerTwo = handler((req: Request) => getUserTwo(1)
-  .leftMap((ue: string) => BadRequest<string>(ue))
+const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap((ue: string) => BadRequest(ue))
+
+const userHandlerTwo = handler((req: Request) => orBadRequest(getUserTwo(1))
   .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })).leftMap(a => BadRequest(a)))
   .flatMapF(async user => Right(user))
+  .flatMap(user => fromPromiseOptionF(Promise.resolve(Some(user))))
   .onComplete(
     data => OK(data),
     BadRequest,

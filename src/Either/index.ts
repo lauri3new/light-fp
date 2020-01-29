@@ -1,3 +1,4 @@
+import { Option } from '../Option'
 
 export interface Either<E, A> {
   _tag: string
@@ -26,7 +27,7 @@ export interface Right<E, A> extends Either<E, A> {
   map:<B>(f:(_: A) => B) => Either<E, B>
   leftMap:<B>(f:(_: E) => B) => Either<B, A>
   flatMap:<B>(f:(_: A) => Either<E, B>) => Either<E, B>
-  match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B
+  match:<B, C>(f:(_:E) => B, g:(_:A) => C) => C
 }
 
 export const Right = <A>(a: A): Either<any, A> => ({
@@ -48,6 +49,11 @@ export const Left = <A>(a: A): Left<A, any> => ({
   flatMap: _ => Left<A>(a),
   match: (f, g) => f(a),
 })
+
+export const fromOption = <A, B>(a: Option<A>, left?: B) => a.match(
+  someA => Right(someA),
+  () => Left(left),
+)
 
 // export interface Validation<E, A> {
 //   _tag: string
