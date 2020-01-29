@@ -7,15 +7,17 @@ export interface PromiseEither<A, B> {
   __val: Promise<Either<A, B>>
   __tag: string
   map: <C>(f:(_:B) => C) => PromiseEither<A, C>
+  leftMap: <C>(f:(_:A) => C) => PromiseEither<C, B>
   flatMap: <C>(f:(_:B) => PromiseEither<A, C>) => PromiseEither<A, C>
   flatMapF: <C>(f:(_:B) => Promise<Either<A, C>>) => PromiseEither<A, C>
-  fork: <C>(onSuccess: (_:B) => C, onFailure: (_:A) => C, onError: (_?: Error) => C) => Promise<C>
+  onComplete: <C, D, E>(onSuccess: (_:B) => C, onFailure: (_:A) => D, onError: (_?: Error) => E) => Promise<C | D | E>
 }
 
 export const PromiseEither = <A, B>(val: Promise<Either<A, B>>): PromiseEither<A, B> => ({
   __val: val,
   __tag: 'PromiseEither',
   map: <C>(f: (_:B) => C) => PromiseEither<A, C>(val.then(eitherA => eitherA.map(f))),
+  leftMap: <C>(f: (_:A) => C) => PromiseEither<C, B>(val.then(eitherA => eitherA.leftMap(f))),
   flatMap: <C>(f: (_:B) => PromiseEither<A, C>) => PromiseEither<A, C>(
     val.then(eitherA => eitherA.match(
       none => Promise.resolve<Either<A, C>>(Left(none)),
@@ -26,7 +28,7 @@ export const PromiseEither = <A, B>(val: Promise<Either<A, B>>): PromiseEither<A
     none => Promise.resolve<Either<A, C>>(Left(none)),
     some => f(some),
   ))),
-  fork: <C>(f: (_:B) => C, g: (_:A) => C, j: (_?: any) => C): Promise<C> => val.then(
+  onComplete: <C, D, E>(f: (_:B) => C, g: (_:A) => D, j: (_?: any) => E) => val.then(
     (a) => a.match(
       none => g(none),
       some => f(some),

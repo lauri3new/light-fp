@@ -2,6 +2,9 @@
 import express, { Request, Response } from 'express'
 import { PromiseEither, sequence } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
+import {
+  Result, OK, BadRequest, InternalServerError,
+} from './result'
 
 const app = express()
 
@@ -45,17 +48,68 @@ const getFriendsByUsername = (name: string) => PromiseEither(new Promise<Either<
 }))
 
 // const route = (handler: (_: Request) => PromiseEither<Result, Result>) => (req: Request, res: Response) => (req) => handler
+const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
+type HttpEffect<A> = Promise<void>
+const handler = <A extends Result>(a: (req: Request) => Promise<A>) => (req: Request, res: Response): HttpEffect<A> => a(req).then(
+  result => runResponse(res, result),
+)
 
-const helloWorld = (req: Request, res: Response) => getUser(1)
+const userHandler = handler((req: Request) => getUser(1)
   .flatMap(user => getFriendsByUsername(user.name).map(friends => ({ user, friends })))
   .flatMapF(async user => Right(user))
-  .fork(
-    username => res.status(200).send(username),
-    errorMessage => res.status(400).send(errorMessage),
-    username => res.status(500).send(username),
-  )
+  .onComplete(
+    data => OK(data),
+    BadRequest,
+    InternalServerError,
+  ))
 
-router.use('/hello', helloWorld)
+enum userErrors {
+  notFound = 'user was not found'
+}
+
+const getUserTwo = (id: number) => PromiseEither(new Promise<Either<userErrors, User>>((res, rej) => {
+  setTimeout(() => {
+    if (Math.random() < 0.3) {
+      return res(Right({
+        id,
+        name: 'jabba',
+      }))
+    }
+    if (Math.random() < 0.3) {
+      return res(Left(userErrors.notFound))
+    }
+    // eslint-disable-next-line no-throw-literal
+    return rej(new Error('boom'))
+  })
+}))
+
+const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Either<string, User[]>>((res, rej) => {
+  setTimeout(() => {
+    if (Math.random() < 0.3) {
+      return res(Right([{
+        id: 4,
+        name: 'jabba',
+      }]))
+    }
+    if (Math.random() < 0.3) {
+      return res(Left('no friends found'))
+    }
+    // eslint-disable-next-line no-throw-literal
+    return rej(new Error('boom'))
+  })
+}))
+
+const userHandlerTwo = handler((req: Request) => getUserTwo(1)
+  .leftMap((ue: string) => BadRequest<string>(ue))
+  .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })).leftMap(a => BadRequest(a)))
+  .flatMapF(async user => Right(user))
+  .onComplete(
+    data => OK(data),
+    BadRequest,
+    InternalServerError,
+  ))
+
+router.use('/hello', userHandler)
 
 app.use('/', router)
 
