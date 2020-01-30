@@ -52,11 +52,28 @@ const getFriendsByUsername = (name: string) => PromiseEither(new Promise<Either<
 // const route = (handler: (_: Request) => PromiseEither<Result, Result>) => (req: Request, res: Response) => (req) => handler
 const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
 type HttpEffect<A> = Promise<void>
-const handler = <A extends Result>(a: (req: Request) => Promise<A>) => (req: Request, res: Response): HttpEffect<A> => a(req).then(
+type handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response) => HttpEffect<A>
+const handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response): HttpEffect<A> => a(req).then(
   result => runResponse(res, result),
 )
 
-const userHandler = handler((req: Request) => getUser(1)
+const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
+
+type middleware = <A extends Request>(_:Request) => Promise<Either<Result, A>>
+const authMiddleware: middleware = async <A extends Request>(req: A): Promise<Either<Result, A>> => {
+  const token = req.headers.authorization
+  if (!token) {
+    return Left(BadRequest("sorry no token"))
+  }
+  const dbtoken = await tokenLookup(token)
+  return dbtoken.match(
+    token => Right(req),
+    () => Left(BadRequest("sorry you are not logged in"))
+  )
+}
+
+const userHandler = handler((req: Request) => 
+  getUser(1)
   .flatMap(user => getFriendsByUsername(user.name).map(friends => ({ user, friends })))
   .flatMapF(async user => Right(user))
   .onComplete(
@@ -108,31 +125,71 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
 const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap((ue: string) => BadRequest(ue))
 
 const mapErrors = <A, B>(a:A, f:(_:A) => B): B => f(a)
-Promise.all([1, 2, 3, 4, 5,6 ,7])
-const userHandlerTwo = handler((req: Request) => getUserTwo(1)
-  .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
-  .flatMapF(async user => Right(user))
-  .flatMapF(async ({ user }) => {
-    const [ a ] = await Promise.all([
-      getFriendsByUsernameTwo(user.name).__val, getUserTwo(1).__val
-    ])
-    return a
+
+const userHandlerTwo = handler((req: Request) => PromiseEither(authMiddleware(req))
+  .flatMap((req) => {
+    return getUserTwo(1)
+    .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
+    .flatMapF(async user => Right(user))
+    .flatMapF(async ({ user }) => {
+      const [ a ] = await Promise.all([
+        getFriendsByUsernameTwo(user.name).__val, getUserTwo(1).__val
+      ])
+      return a
+    })
+    .leftMap((a): Result => {
+      switch (a) {
+        case userErrors.notFound:
+          return BadRequest(userErrors.notFound)
+        case friendsErrors.notFound:
+          return BadRequest(userErrors.notFound)
+      }
+    })
   })
-  .leftMap((a): Result => {
-    switch (a) {
-      case userErrors.notFound:
-        return BadRequest(userErrors.notFound)
-      case friendsErrors.notFound:
-        return BadRequest(userErrors.notFound)
+    .onComplete(
+      data => OK(data),
+      r => r,
+      InternalServerError,
+    ))
+
+// registration
+const register = (middleware: middleware, handlers: [handler, string, string][]): Router => {
+  const iRouter = express.Router()
+  handlers.forEach((item) => {
+    const [h, path, method] = item
+    if (middleware) {
+      iRouter[method](path, (req, res) => PromiseEither(middleware(req)).onComplete(
+        right => handler(right),
+        a => runResponse(res, a),
+        err => runResponse(res, InternalServerError())
+      ))
+    } else {
+      iRouter[method](path, handler)
     }
   })
-  .onComplete(
-    data => OK(data),
-    r => r,
-    InternalServerError,
-  ))
-
+}
 router.use('/hello', userHandler)
+
+const userRouter = express.Router()
+
+userRouter.use('/helloagain', userHandlerTwo)
+
+// build a typed router ?
+enum HttpMethods {
+  GET = 'get'
+}
+
+const lightRouter = <A>(middleware: middleware) => (path: string, method: HttpMethods, handler: handler) => {
+  const iRouter = express.Router()
+  iRouter[method](path, (req, res) => PromiseEither(middleware(req)).onComplete(
+    right => handler(right),
+    a => runResponse(res, a),
+    err => runResponse(res, InternalServerError())
+  ))
+  return iRouter
+}
+
+router.use('/daba', userRouter)
 
 app.use('/', router)
 
