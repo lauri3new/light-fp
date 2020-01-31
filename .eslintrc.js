@@ -27,7 +27,7 @@ module.exports = {
     'import/extensions': 'warn',
     'max-len': 'warn',
     'no-underscore-dangle': 'off',
-    // 'default-case': 'off',
-    // 'consistent-return': 'off'
+    'default-case': 'off',
+    'consistent-return': 'off'
   },
 };

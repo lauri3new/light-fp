@@ -1,6 +1,6 @@
 /* eslint-disable  */
 // TODO: write demo route handlers + middleware using PromiseEither
-import express, { Request, Response } from 'express'
+import express, { Request, Response, Router } from 'express'
 import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
@@ -53,14 +53,14 @@ const getFriendsByUsername = (name: string) => PromiseEither(new Promise<Either<
 const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
 type HttpEffect<A> = Promise<void>
 type handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response) => HttpEffect<A>
+type handlerFn = <A, B>(req: B, res: Response) => HttpEffect<A>
 const handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response): HttpEffect<A> => a(req).then(
   result => runResponse(res, result),
 )
 
 const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
 
-type middleware = <A extends Request>(_:Request) => Promise<Either<Result, A>>
-const authMiddleware: middleware = async <A extends Request>(req: A): Promise<Either<Result, A>> => {
+const authMiddleware = async (req: Request): Promise<Either<Result, Request>> => {
   const token = req.headers.authorization
   if (!token) {
     return Left(BadRequest("sorry no token"))
@@ -151,43 +151,16 @@ const userHandlerTwo = handler((req: Request) => PromiseEither(authMiddleware(re
       r => r,
       InternalServerError,
     ))
-
-// registration
-const register = (middleware: middleware, handlers: [handler, string, string][]): Router => {
-  const iRouter = express.Router()
-  handlers.forEach((item) => {
-    const [h, path, method] = item
-    if (middleware) {
-      iRouter[method](path, (req, res) => PromiseEither(middleware(req)).onComplete(
-        right => handler(right),
-        a => runResponse(res, a),
-        err => runResponse(res, InternalServerError())
-      ))
-    } else {
-      iRouter[method](path, handler)
-    }
-  })
+// build a typed router ?
+enum HttpMethods {
+  GET = 'get'
 }
+// registratio
 router.use('/hello', userHandler)
 
 const userRouter = express.Router()
 
 userRouter.use('/helloagain', userHandlerTwo)
-
-// build a typed router ?
-enum HttpMethods {
-  GET = 'get'
-}
-
-const lightRouter = <A>(middleware: middleware) => (path: string, method: HttpMethods, handler: handler) => {
-  const iRouter = express.Router()
-  iRouter[method](path, (req, res) => PromiseEither(middleware(req)).onComplete(
-    right => handler(right),
-    a => runResponse(res, a),
-    err => runResponse(res, InternalServerError())
-  ))
-  return iRouter
-}
 
 router.use('/daba', userRouter)
 

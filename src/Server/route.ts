@@ -1,43 +1,72 @@
-// import express, { Express, Request } from 'express'
-// import { PromiseEither } from '../PromiseEither'
-// import { Right } from '../Either'
-// import { Option, Some, None } from '../Option'
 
-// some ideas about how routing could work
+import express, { Request, Response, Router } from 'express'
+import { lRequest, dabaRequest } from '../Server/handler'
+import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
+import { Right, Left, Either } from '../Either'
+import {
+  Result, OK, BadRequest, InternalServerError,
+} from './result'
+import { Some } from '../Option'
+// what about routeHandler registration?
 
-// const app = express()
+const app = express()
 
-// interface Result {
-//   status: number
-//   body: string
-//   contentType: string
-// }
+const router = express.Router()
 
-// const match = (req: Request, method: string, path: string) => {
-//   if (req.path === path) return true
-//   return false
-// }
+type middleware <A extends lRequest, B extends A> = (req: A) => PromiseEither<Result, B>
 
-// type Route = (req: Request) => Option<PromiseEither<Result, Result>>
-// const Route = (method: string, path: string, handler: (req: Request) => PromiseEither<Result, Result>) => (req: Request): Option<PromiseEither<Result, Result>> => {
-//   if (match(req, method, path)) {
-//     return Some(handler(req))
-//   }
-//   return None()
-// }
+app.use()
 
-// const route = Route('GET', '/hello', (req) => PromiseEither(Promise.resolve(Right({
-//   status: 200,
-//   body: 'string',
-//   contentType: 'string',
-// }))))
+type ahandler <B extends lRequest = lRequest> = (req: B) => Promise<Result>
 
-// const combine = (a: Route, b: Route) => (req: Request) => a(req).orElse(b(req))
+enum HttpMethods {
+  GET = 'get',
+  POST = 'post',
+  PUT = 'put',
+  DELETE = 'delete',
+  PATCH = 'patch',
+  OPTIONS = 'options'
+}
 
-// const router = combine(route, route)
+interface routeHandlersObj<A extends lRequest> {
+  [path: string]: {
+    method: HttpMethods,
+    handler: ahandler<A>
+  }
+}
 
-// const App = (a: Express, ruter: any) => {
-//   a.use('*', (req, res) => {
-//     ruter(req, res)
-//   })
-// }
+type HttpEffect<A> = Promise<void>
+
+const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
+
+const routeHandler = <A extends Request>(a: (req: lRequest) => Promise<Result>) => (req: A, res: Response): HttpEffect<A> => a({ req }).then(
+  result => runResponse(res, result),
+)
+
+const lRouter = <A extends lRequest>(middleware: middleware<lRequest, A>, routeHandlersObj: routeHandlersObj<A>): Router => {
+  const _router = Router()
+  Object.keys(routeHandlersObj).forEach((path) => {
+    const { method, handler } = routeHandlersObj[path]
+    _router[method](path, routeHandler(async (req) => middleware(req).onComplete(
+      lreq => handler(lreq),
+      i => i,
+      () => InternalServerError(),
+    )))
+  })
+  return _router
+}
+
+const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
+  ...req,
+  daba: {
+    daba: '123',
+  },
+})))
+
+const loggerMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(req)))
+
+const userHandler = (req: dabaRequest) => Promise.resolve(OK('hello'))
+
+lRouter(dabaMiddleware, {
+  '/hello': { method: HttpMethods.GET, handler: userHandler },
+})

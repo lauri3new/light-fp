@@ -2,6 +2,8 @@
 import { Either, Right, Left } from '../Either'
 import { Option, Some, None } from '../Option'
 import { PromiseOption } from '../PromiseOption'
+import { lRequest, dabaRequest } from '../Server/handler'
+import { Result } from '../Server/result'
 
 // TODO: fork and flatMap from Promise<Either<_,_>>
 
@@ -59,3 +61,25 @@ export const fromPromiseOptionF = <A>(poa: Promise<Option<A>>) => PromiseEither<
 ))
 
 fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))
+
+type PromiseEitherK <A, B, C> = (a: (A)) => PromiseEither<B, C>
+
+const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
+
+const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
+  ...req,
+  daba: {
+    daba: '123',
+  },
+})))
+
+const loggerMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(req)))
+
+const fullRoute = (req: lRequest) => composeK(dabaMiddleware, loggerMiddleware)(req)
+
+const fullRouteTwo = (req: lRequest) => composeK(dabaMiddleware, composeK(loggerMiddleware, dabaMiddleware))(req)
+
+const asc = (composeK)
+
+
+// middleware makes sense.
