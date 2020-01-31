@@ -170,7 +170,7 @@ const userHandler = (req: lRequest) => globalMiddlewares(req)
     ])
     return a
   })
-  .leftMap((a): Result => {
+  .leftMap((a) => {
     switch (a) {
       case userErrors.notFound:
         return BadRequest(userErrors.notFound)
