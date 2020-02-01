@@ -79,7 +79,10 @@ const fullRoute = (req: lRequest) => composeK(dabaMiddleware, loggerMiddleware)(
 
 const fullRouteTwo = (req: lRequest) => composeK(dabaMiddleware, composeK(loggerMiddleware, dabaMiddleware))(req)
 
-const asc = (composeK)
+const compose3 = <A, B, C, D, E, G, F, J, H> (a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>) => composeK(a, composeK(b, c))
 
+const a = compose3(loggerMiddleware, dabaMiddleware, loggerMiddleware)
+
+// TODO: write compose as overloads
 
 // middleware makes sense.

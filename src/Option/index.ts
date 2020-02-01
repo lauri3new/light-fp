@@ -1,3 +1,4 @@
+import { map } from "../Object"
 
 export interface Option<A> {
   _tag: string

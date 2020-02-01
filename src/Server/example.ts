@@ -34,7 +34,17 @@ interface routeHandlersObj<A extends lRequest> {
 type HttpEffect<A> = Promise<void>
 
 const runResponse = (res: Response, result: Result) => {
-  res.setHeader('content-type', result.contentType || 'application/json')
+  res.set('content-type', result.contentType || 'application/json')
+  const { headers, cookies } = result
+  if (headers) {
+    res.set(headers)
+  }
+  if (cookies) {
+    cookies.forEach((cookie) => {
+      const { name, value, ...options } = cookie
+      res.cookie(name, value, options)
+    })
+  }
   res.status(result.status).send(result.body)
 }
 

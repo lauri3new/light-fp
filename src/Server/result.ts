@@ -1,10 +1,19 @@
+import { CookieOptions } from 'express'
 
 export type body = Object | Buffer | string | null
 
+export interface Cookie extends CookieOptions {
+  name: string
+  value: string
+}
+
+// result may need to expand on..
 export interface Result<A = body> {
   contentType?: string
   body: A
   status: httpStatus
+  headers?: { [key: string]: string }
+  cookies?: Cookie[]
 }
 
 enum httpStatus {
