@@ -35,7 +35,7 @@ type HttpEffect<A> = Promise<void>
 
 const runResponse = (res: Response, result: Result) => {
   res.set('content-type', result.contentType || 'application/json')
-  const { headers, cookies } = result
+  const { headers, cookies, action } = result
   if (headers) {
     res.set(headers)
   }
@@ -44,6 +44,11 @@ const runResponse = (res: Response, result: Result) => {
       const { name, value, ...options } = cookie
       res.cookie(name, value, options)
     })
+  }
+  if (action) {
+    const [resMethod, firstarg, options] = action
+    if (resMethod =)
+    res[resMethod](firstarg)
   }
   res.status(result.status).send(result.body)
 }
