@@ -64,7 +64,7 @@ fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))
 
 type PromiseEitherK <A, B, C> = (a: (A)) => PromiseEither<B, C>
 
-const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
+export const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
 
 const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
   ...req,

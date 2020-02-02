@@ -33,7 +33,7 @@ export interface Result<A = body> {
   // sendFileOptions?:
 }
 
-enum httpStatus {
+export enum httpStatus {
   OK = 200,
   BadRequest = 400,
   NotFound = 404,

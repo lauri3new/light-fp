@@ -1,12 +1,16 @@
 
 import express, { Request, Response, Router } from 'express'
 import { lRequest, dabaRequest } from '../Server/handler'
-import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
+import {
+  PromiseEither, sequence,
+  fromPromiseOptionF, composeK,
+} from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
   Result, OK, BadRequest, InternalServerError,
 } from './result'
 import { Some } from '../Option'
+import { queryValidatorMiddleware } from './reqValidations'
 // what about routeHandler registration?
 
 const app = express()
@@ -67,6 +71,32 @@ const loggerMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A> 
 
 const userHandler = (req: dabaRequest) => Promise.resolve(OK('hello'))
 
-lRouter(dabaMiddleware, {
+const mws = composeK(queryValidatorMiddleware, dabaMiddleware)
+
+lRouter(mws, {
   '/hello': { method: HttpMethods.GET, handler: userHandler },
 })
+
+router.get('/ok', routeHandler(
+  async (req) => mws(req)
+    .onComplete(
+      userHandler,
+      i => i,
+      () => InternalServerError(),
+    ),
+))
+
+const runResponset = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
+
+const routeHandlert = <A extends Request, B extends lRequest>(
+  mwsa: (req: lRequest) => PromiseEither<Result, B>, a: (req: B) => Promise<Result>,
+) => async (req: A, res: Response): HttpEffect<A> => mwsa({ req }).onComplete(
+    a,
+    async i => i,
+    async () => InternalServerError(),
+  ).then(async t => {
+    const ba = await t
+    runResponset(res, ba)
+  })
+
+const basef = routeHandlert(mws, async (abc) => OK(abc))
