@@ -60,25 +60,28 @@ const lRouter = <A extends lRequest>(middleware: middleware<lRequest, A>, routeH
   return _router
 }
 
-const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
+const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<never, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
   ...req,
   daba: {
     daba: '123',
   },
 })))
 
-const loggerMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(req)))
+const loggerMiddleware = <A extends lRequest>(req: A) => PromiseEither(
+  (Math.random() > 0.5) ? Promise.resolve(Right(req)) : Promise.resolve(Left('doh')),
+).leftMap(string => BadRequest(string))
+const failMiddleware = <A extends lRequest>(req: A) => PromiseEither(Promise.resolve(Left(req)))
 
 const userHandler = (req: dabaRequest) => Promise.resolve(OK('hello'))
 
-const mws = composeK(queryValidatorMiddleware, dabaMiddleware)
+const mws = composeK(loggerMiddleware, dabaMiddleware)
 
 lRouter(mws, {
   '/hello': { method: HttpMethods.GET, handler: userHandler },
 })
 
 router.get('/ok', routeHandler(
-  async (req) => mws(req)
+  async (req) => dabaMiddleware(req)
     .onComplete(
       userHandler,
       i => i,
@@ -100,3 +103,23 @@ const routeHandlert = <A extends Request, B extends lRequest>(
   })
 
 const basef = routeHandlert(mws, async (abc) => OK(abc))
+
+
+const get = <A extends Request, B extends lRequest>(_router: Router) => (path: string, handle: (req: B | lRequest) => Promise<Result>, middlewares?: (req: lRequest) => PromiseEither<Result, B>) => {
+  if (middlewares) {
+    _router.get(path, routeHandlert(middlewares, handle))
+  } else {
+    _router.get(path, routeHandler((req: lRequest) => handle(req)))
+  }
+}
+
+
+const myHandler = routeHandlert(mws, async (abc) => OK(abc))
+
+router.get('/hello', routeHandlert(loggerMiddleware, myHandler))
+
+const b = get(router)('/hello', r)
+
+router.get('ok')
+
+https://http4s.org/v0.17/api/org/http4s/response#Self=org.http4s.Response

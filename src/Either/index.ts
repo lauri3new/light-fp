@@ -30,7 +30,7 @@ export interface Either<E, A> {
 //   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => C
 // }
 
-export const Right = <A, E = any>(a: A): Either<E, A> => ({
+export const Right = <A, E = never>(a: A): Either<E, A> => ({
   _tag: 'some',
   get: () => a,
   // orElse: f => Right(a),
@@ -40,7 +40,7 @@ export const Right = <A, E = any>(a: A): Either<E, A> => ({
   match: (f, g) => g(a),
 })
 
-export const Left = <A>(a: A): Either<A, any> => ({
+export const Left = <A>(a: A): Either<A, never> => ({
   _tag: 'none',
   get: () => a,
   // orElse: b => b,
@@ -55,9 +55,9 @@ export const fromOption = <A, B>(a: Option<A>, left?: B) => a.match(
   () => Left(left),
 )
 
-export const sequence = <A, B>(as: Either<A, B>[]): Either<A, B[]> => as.reduce(
-  (acc, item) => item.flatMap(b => acc.flatMap(iacc => (Right([...iacc, b])))), (Right<any>([])),
-)
+// export const sequence = <A, B>(as: Either<A, B>[]): Either<A, B[]> => as.reduce(
+//   (acc, item) => item.flatMap(b => acc.flatMap(iacc => (Right([...iacc, b])))), (Right<any>([])),
+// )
 
 // export const sequenceV = <T extends Array<Either<any, any>>[]>(...as: T): {
 //   [K in keyof T]: T[K] extends Either<any, any> ? InstanceType<T[K]> : never
