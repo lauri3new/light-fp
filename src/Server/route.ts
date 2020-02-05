@@ -122,4 +122,4 @@ const b = get(router)('/hello', r)
 
 router.get('ok')
 
-https://http4s.org/v0.17/api/org/http4s/response#Self=org.http4s.Response
+// https://http4s.org/v0.17/api/org/http4s/response#Self=org.http4s.Response

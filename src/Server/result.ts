@@ -8,29 +8,24 @@ export interface Cookie extends CookieOptions {
   value: string
 }
 
-enum resultAction {
+export interface ClearCookie extends CookieOptions {
+  name: string
+}
+
+export enum resultAction {
   render = 'render',
   sendFile = 'sendFile',
   redirect = 'redirect',
 }
 
-// maxAgeSets the max-age property of the Cache-Control header in milliseconds or a string in ms format	0
-// rootRoot directory for relative filenames.// lastModified	Sets the Last-Modified header to the last modified date of the file on the OS. Set false to disable it.	Enabled	4.9.0+
-// headers	Object containing HTTP headers to serve with the file
-// dotfiles	Option for serving dotfiles. Possible values are “allow”, “deny”, “ignore”.	“ignore
-// acceptRanges	Enable or disable accepting ranged requests.	true	4.14+
-// cacheControl	Enable or disable setting Cache-Control response header.	true	4.14+
-// immutable
-
-// result may need to expand on..
 export interface Result<A = body> {
   contentType?: string
   body: A
   status: httpStatus
   headers?: { [key: string]: string }
   cookies?: Cookie[]
-  action?: [ resultAction, string] | [ resultAction, string, object]
-  // sendFileOptions?:
+  clearCookies?: Cookie[]
+  action?: [ resultAction, string] | [ resultAction, string, object] | [ resultAction, string, object, (error: any, html: any) => void ]
 }
 
 export enum httpStatus {
@@ -40,26 +35,42 @@ export enum httpStatus {
   InternalServerError = 500
 }
 
-export const OK = <A>(body: A) => ({
-  status: httpStatus.OK,
+export const Result = <A = body>(status: httpStatus, body: A, contentType = 'application/json') => ({
+  status,
   body,
-  contentType: 'application/json',
+  contentType,
+  map: <B>(f: (_: Result<A>) => Result<A>) => f(Result(status, body, contentType)),
 })
 
-export const BadRequest = <A>(body: A) => ({
-  status: httpStatus.BadRequest,
-  body,
-  contentType: 'application/json',
+export const OK = <A>(body: A) => Result(httpStatus.OK, body)
+export const BadRequest = <A>(body: A) => Result(httpStatus.BadRequest, body)
+export const InternalServerError = <A>(body: A) => Result(httpStatus.InternalServerError, body)
+export const NotFound = <A>(body: A) => Result(httpStatus.NotFound, body)
+
+export const withCookies = <A extends Result>(cookies: Cookie[]) => (a: A) => ({
+  ...a,
+  cookies,
 })
 
-export const NotFound = <A>(body: A) => ({
-  status: httpStatus.NotFound,
-  body,
-  contentType: 'application/json',
+export const clearCookies = <A extends Result>(cookies: ClearCookie[]) => (a: A) => ({
+  ...a,
+  clearCookies: cookies,
 })
 
-export const InternalServerError = () => ({
-  status: httpStatus.InternalServerError,
-  body: 'Sorry something went wrong.',
-  contentType: 'application/json',
+export const withContentType = <A extends Result>(contentType: string) => (a: A) => ({
+  ...a,
+  contentType,
+})
+
+export const withHeaders = <A extends Result>(headers: { [key: string]: string }) => (a: A) => ({
+  ...a,
+  headers: {
+    ...a.headers,
+    ...headers,
+  },
+})
+
+export const withAction = <A extends Result>(action: [ resultAction, string] | [ resultAction, string, object]) => (a: A) => ({
+  ...a,
+  action,
 })

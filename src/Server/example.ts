@@ -4,7 +4,7 @@ import { lRequest, dabaRequest } from '../Server/handler'
 import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
-  Result, OK, BadRequest, InternalServerError,
+  Result, OK, BadRequest, InternalServerError, resultAction,
 } from './result'
 import { Some } from '../Option'
 // what about routeHandler registration?
@@ -35,7 +35,9 @@ type HttpEffect<A> = Promise<void>
 
 const runResponse = (res: Response, result: Result) => {
   res.set('content-type', result.contentType || 'application/json')
-  const { headers, cookies, action } = result
+  const {
+    headers, cookies, clearCookies, action,
+  } = result
   if (headers) {
     res.set(headers)
   }
@@ -45,10 +47,23 @@ const runResponse = (res: Response, result: Result) => {
       res.cookie(name, value, options)
     })
   }
+  if (clearCookies) {
+    clearCookies.forEach((clearCookie) => {
+      const { name, ...options } = clearCookie
+      res.clearCookie(name, options)
+    })
+  }
   if (action) {
-    const [resMethod, firstarg, options] = action
-    if (resMethod =)
-    res[resMethod](firstarg)
+    const [resMethod, firstarg, options, cb] = action
+    if (resMethod === resultAction.redirect) {
+      return res[resMethod](firstarg)
+    }
+    if (resMethod === resultAction.sendFile) {
+      return res[resMethod](firstarg, options)
+    }
+    if (resMethod === resultAction.render) {
+      return res[resMethod](firstarg, options, cb)
+    }
   }
   res.status(result.status).send(result.body)
 }
@@ -73,7 +88,7 @@ const lmwRouter = <A extends lRequest>(middleware: middleware<lRequest, A>, rout
     _router[method](path, routeHandler(async (req) => middleware(req).onComplete(
       lreq => handler(lreq),
       i => i,
-      () => InternalServerError(),
+      () => InternalServerError('doh'),
     )))
   })
   return _router
