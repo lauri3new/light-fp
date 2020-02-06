@@ -57,7 +57,7 @@ interface daba {
 }
 
 export interface dabaRequest {
-  daba: daba
+  daba: daba,
   req: Request
 }
 
