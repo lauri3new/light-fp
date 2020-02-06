@@ -1,7 +1,7 @@
 /* eslint-disable  */
 // TODO: write demo route handlers + middleware using PromiseEither
 import express, { Request, Response, Router } from 'express'
-import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
+import { PromiseEither, fromPromiseOptionF } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
   Result, OK, BadRequest, InternalServerError,
@@ -49,25 +49,25 @@ const getFriendsByUsername = (name: string) => PromiseEither(new Promise<Either<
   })
 }))
 
-// const route = (handler: (_: Request) => PromiseEither<Result, Result>) => (req: Request, res: Response) => (req) => handler
+// const route = (handler: (_: Request) => PromiseEither<Result, Result>) => (ctx: Request, res: Response) => (ctx) => handler
 const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
 type HttpEffect<A> = Promise<void>
-type handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response) => HttpEffect<A>
-type handlerFn = <A, B>(req: B, res: Response) => HttpEffect<A>
-const handler = <A extends Result, B extends Request>(a: (req: Request) => Promise<A>) => (req: B, res: Response): HttpEffect<A> => a(req).then(
+type handler = <A extends Result, B extends Request>(a: (ctx: Request) => Promise<A>) => (ctx: B, res: Response) => HttpEffect<A>
+type handlerFn = <A, B>(ctx: B, res: Response) => HttpEffect<A>
+const handler = <A extends Result, B extends Request>(a: (ctx: Request) => Promise<A>) => (ctx: B, res: Response): HttpEffect<A> => a(ctx).then(
   result => runResponse(res, result),
 )
 
 const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
 
-const authMiddleware = async (req: Request): Promise<Either<Result, Request>> => {
-  const token = req.headers.authorization
+const authMiddleware = async (ctx: Request): Promise<Either<Result, Request>> => {
+  const token = ctx.headers.authorization
   if (!token) {
     return Left(BadRequest("sorry no token"))
   }
   const dbtoken = await tokenLookup(token)
   return dbtoken.match(
-    token => Right(req),
+    token => Right(ctx),
     () => Left(BadRequest("sorry you are not logged in"))
   )
 }
@@ -79,7 +79,7 @@ const userHandler = handler((req: Request) =>
   .onComplete(
     data => OK(data),
     BadRequest,
-    InternalServerError,
+    () => InternalServerError('Error'),
   ))
 
 enum userErrors {
@@ -127,7 +127,7 @@ const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap
 const mapErrors = <A, B>(a:A, f:(_:A) => B): B => f(a)
 
 const userHandlerTwo = handler((req: Request) => PromiseEither(authMiddleware(req))
-  .flatMap((req) => {
+  .flatMap((ctx) => {
     return getUserTwo(1)
     .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
     .flatMapF(async user => Right(user))
@@ -149,7 +149,7 @@ const userHandlerTwo = handler((req: Request) => PromiseEither(authMiddleware(re
     .onComplete(
       data => OK(data),
       r => r,
-      InternalServerError,
+      () => InternalServerError('awd'),
     ))
 // build a typed router ?
 enum HttpMethods {
@@ -166,6 +166,6 @@ router.use('/daba', userRouter)
 
 app.use('/', router)
 
-app.use('*', (req, res) => res.send({ ok: 404 }))
+app.use('*', (ctx, res) => res.send({ ok: 404 }))
 
 app.listen(3000, () => console.log('Example app listening on port!'))

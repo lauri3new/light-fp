@@ -1,7 +1,7 @@
 
 import express, { Request, Response, Router } from 'express'
-import { lRequest, dabaRequest } from '../Server/handler'
-import { PromiseEither, sequence, fromPromiseOptionF } from '../PromiseEither'
+import { Context, dabaRequest } from '../Server/handler'
+import { PromiseEither, fromPromiseOptionF } from '../PromiseEither'
 import { Right, Left, Either } from '../Either'
 import {
   Result, OK, BadRequest, InternalServerError, resultAction,
@@ -11,9 +11,9 @@ import { Some } from '../Option'
 
 const app = express()
 
-type middleware <A extends lRequest, B extends A> = (req: A) => PromiseEither<Result, B>
+type middleware <A extends Context, B extends A> = (ctx: A) => PromiseEither<Result, B>
 
-type ahandler <B extends lRequest = lRequest> = (req: B) => Promise<Result>
+type ahandler <B extends Context = Context> = (ctx: B) => Promise<Result>
 
 enum HttpMethods {
   GET = 'get',
@@ -24,7 +24,7 @@ enum HttpMethods {
   OPTIONS = 'options'
 }
 
-interface routeHandlersObj<A extends lRequest> {
+interface routeHandlersObj<A extends Context> {
   [path: string]: {
     method: HttpMethods,
     handler: ahandler<A>
@@ -68,11 +68,11 @@ const runResponse = (res: Response, result: Result) => {
   res.status(result.status).send(result.body)
 }
 
-const routeHandler = <A>(a: (req: lRequest) => Promise<Result<A>>) => (req: Request, res: Response): HttpEffect<A> => a({ req }).then(
+const routeHandler = <A>(a: (ctx: Context) => Promise<Result<A>>) => (req: Request, res: Response): HttpEffect<A> => a({ req }).then(
   result => runResponse(res, result),
 )
 
-const lRouter = (routeHandlersObj: routeHandlersObj<lRequest>): Router => {
+const lRouter = (routeHandlersObj: routeHandlersObj<Context>): Router => {
   const _router = Router()
   Object.keys(routeHandlersObj).forEach((path) => {
     const { method, handler } = routeHandlersObj[path]
@@ -81,11 +81,11 @@ const lRouter = (routeHandlersObj: routeHandlersObj<lRequest>): Router => {
   return _router
 }
 
-const lmwRouter = <A extends lRequest>(middleware: middleware<lRequest, A>, routeHandlersObj: routeHandlersObj<A>): Router => {
+const lmwRouter = <A extends Context>(middleware: middleware<Context, A>, routeHandlersObj: routeHandlersObj<A>): Router => {
   const _router = Router()
   Object.keys(routeHandlersObj).forEach((path) => {
     const { method, handler } = routeHandlersObj[path]
-    _router[method](path, routeHandler(async (req) => middleware(req).onComplete(
+    _router[method](path, routeHandler(async (ctx) => middleware(ctx).onComplete(
       lreq => handler(lreq),
       i => i,
       () => InternalServerError('doh'),
@@ -94,19 +94,19 @@ const lmwRouter = <A extends lRequest>(middleware: middleware<lRequest, A>, rout
   return _router
 }
 
-const dabaMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
-  ...req,
+const dabaMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
+  ...ctx,
   daba: {
     daba: '123',
   },
 })))
 
-const loggerMiddleware = <A extends lRequest>(req: A): PromiseEither<Result, A> => {
-  console.log(`#log ${req.req.path}`)
-  return PromiseEither(Promise.resolve(Right(req)))
+const loggerMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A> => {
+  console.log(`#log ${ctx.req.path}`)
+  return PromiseEither(Promise.resolve(Right(ctx)))
 }
 
-const handler1 = (req: lRequest) => Promise.resolve(OK({ hello: 'world' }))
+const handler1 = (ctx: Context) => Promise.resolve(OK({ hello: 'world' }))
 
 const helloRoutes = lRouter({
   '/hello': {
@@ -115,7 +115,7 @@ const helloRoutes = lRouter({
   },
 })
 
-const handler2 = (req: dabaRequest) => Promise.resolve(OK({ hello: 'world' }))
+const handler2 = (ctx: dabaRequest) => Promise.resolve(OK({ hello: 'world' }))
 
 
 enum userErrors {
@@ -165,14 +165,14 @@ const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Eith
 
 const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right('valid') : Left('invalid'))
 
-const authMiddleware = async (req: lRequest): Promise<Either<Result, lRequest>> => {
-  const token = req.req.headers.authorization
+const authMiddleware = async (ctx: Context): Promise<Either<Result, Context>> => {
+  const token = ctx.req.headers.authorization
   if (!token) {
     return Left(BadRequest('sorry no token'))
   }
   const dbtoken = await tokenLookup(token)
   return dbtoken.match(
-    () => Right(req),
+    () => Right(ctx),
     () => Left(BadRequest('sorry you are not logged in')),
   )
 }
@@ -181,7 +181,7 @@ const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap
 
 const mapErrors = <A, B>(a:A, f:(_:A) => B): B => f(a)
 
-const userHandlerTwo = <A extends lRequest>(req: A) => PromiseEither(authMiddleware(req))
+const userHandlerTwo = <A extends Context>(ctx: A) => PromiseEither(authMiddleware(ctx))
   .flatMap(() => getUserTwo(1)
     .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
     .flatMapF(async user => Right(user))
@@ -207,7 +207,7 @@ const helloWorldRoutes = lmwRouter(loggerMiddleware, {
   },
 })
 
-app.use('/api/test', routeHandler(async req => loggerMiddleware(req).flatMap(userHandlerTwo).onComplete(
+app.use('/api/test', routeHandler(async ctx => loggerMiddleware(ctx).flatMap(userHandlerTwo).onComplete(
   a => OK(a),
   b => b,
   () => OK('safe'),

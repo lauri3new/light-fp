@@ -2,7 +2,7 @@ import { Option } from '../Option'
 
 export interface Either<E, A> {
   _tag: string
-  get: () => A
+  get: () => E | A
   // orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
   leftMap:<B>(f:(_: E) => B) => Either<B, A>
   map:<B>(f:(_: A) => B) => Either<E, B>

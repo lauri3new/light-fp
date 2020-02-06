@@ -1,5 +1,5 @@
 import yup, { string } from 'yup'
-import { lRequest } from './handler'
+import { Context } from './handler'
 import { Right, Left, Either } from '../Either'
 import { BadRequest, Result } from './result'
 import { PromiseEither } from '../PromiseEither'
@@ -10,7 +10,7 @@ const PEfromValidation = <A extends object>(a: yup.ObjectSchema<A>, input: any):
   .then(abd => Right(abd))
   .catch(() => Left(BadRequest('asef')))
 
-const queryMw = <B extends object>(a: yup.ObjectSchema<B>) => <A extends lRequest>(ctx: A) => {
+const queryMw = <B extends object>(a: yup.ObjectSchema<B>) => <A extends Context>(ctx: A) => {
   const { query: _query } = ctx.req
   return PromiseEither(PEfromValidation(a, _query)).map(query => ({ ...ctx, query }))
 }
