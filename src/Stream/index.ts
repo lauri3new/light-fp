@@ -13,6 +13,9 @@ interface Stream<E, A> {
   flatMap: <EE, B>(g: (_:A) => Stream<EE, B>) => Stream<E | EE, B>,
   merge: (_: Stream<E, A>) => Stream<E, A>,
   concat: (_: Stream<E, A>) => Stream<E, A>,
+  take: (n: number) => Stream<E, A>,
+  takeWhile: (f: (_:A) => Boolean) => Stream<E, A>,
+  filter: (f: (_:A) => Boolean) => Stream<E, A>
 }
 
 const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A> => ({
@@ -80,6 +83,41 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
       s.subscribe(_sink)
     },
   })),
+  take: (n: number) => {
+    let b = 0
+    return Stream<E, A>((_sink: Sink<E, A>) => dataProvider(({
+      ..._sink,
+      onNext: (a) => {
+        if (b < n) {
+          _sink.onNext(a)
+          b += 1
+          return
+        }
+        return _sink.onComplete()
+      },
+    })))
+  },
+  filter: (f: (_:A) => Boolean) => Stream<E, A>((_sink: Sink<E, A>) => dataProvider(({
+    ..._sink,
+    onNext: (a) => {
+      if (f(a)) {
+        _sink.onNext(a)
+      }
+    },
+  }))),
+  takeWhile: (f: (_:A) => Boolean) => {
+    let b = true
+    return Stream<E, A>((_sink: Sink<E, A>) => dataProvider(({
+      ..._sink,
+      onNext: (a) => {
+        if (b && f(a)) {
+          _sink.onNext(a)
+        } else {
+          b = false
+        }
+      },
+    })))
+  },
 })
 
 const fromPromise = <E, A>(a: Promise<A>) => Stream((_sink: Sink<E, A>) => {
@@ -95,23 +133,36 @@ const fromPromise = <E, A>(a: Promise<A>) => Stream((_sink: Sink<E, A>) => {
 
 // example
 
-const a = Stream((observer: Sink<string, number>) => {
-  observer.onNext(1)
-  observer.onNext(2)
-  observer.onComplete()
-  return () => {}
+const i = Stream<never, number>((observer) => {
+  const avd = setInterval(() => {
+    observer.onNext(2)
+  }, 500)
+  return () => clearInterval(avd)
 })
 
-const ba = (n: number) => Stream((observer: Sink<never, number>) => {
-  observer.onNext(n + 100)
-  observer.onNext(n + 100)
-  observer.onComplete()
-  observer.onNext(n + 200)
-  return () => {}
-})
-
-a.flatMap(ba).scan((j, b) => j + b, 0).subscribe({
+i.take(5).scan((a, b) => a + b, 0).filter(a => a < 5).subscribe({
   onNext: b => console.log('next', b),
   onError: (e) => console.log('error', e),
   onComplete: () => console.log('complete'),
 })
+
+// const a = Stream((observer: Sink<string, number>) => {
+//   observer.onNext(1)
+//   observer.onNext(2)
+//   observer.onComplete()
+//   return () => {}
+// })
+
+// const ba = (n: number) => Stream((observer: Sink<never, number>) => {
+//   observer.onNext(n + 100)
+//   observer.onNext(n + 100)
+//   observer.onComplete()
+//   observer.onNext(n + 200)
+//   return () => {}
+// })
+
+// a.flatMap(ba).scan((j, b) => j + b, 0).subscribe({
+//   onNext: b => console.log('next', b),
+//   onError: (e) => console.log('error', e),
+//   onComplete: () => console.log('complete'),
+// })

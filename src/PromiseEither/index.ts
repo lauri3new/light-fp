@@ -2,7 +2,7 @@
 import { Either, Right, Left } from '../Either'
 import { Option, Some, None } from '../Option'
 import { PromiseOption } from '../PromiseOption'
-import { Context, dabaRequest } from '../Server/handler'
+import { Context } from '../Server/handler'
 import { Result } from '../Server/result'
 
 // TODO: fork and flatMap from Promise<Either<_,_>>
@@ -66,22 +66,22 @@ type PromiseEitherK <A, B, C> = (a: (A)) => PromiseEither<B, C>
 
 export const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
 
-const dabaMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
-  ...ctx,
-  daba: {
-    daba: '123',
-  },
-})))
+// const dabaMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
+//   ...ctx,
+//   daba: {
+//     daba: '123',
+//   },
+// })))
 
-const loggerMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(ctx)))
+// const loggerMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(ctx)))
 
-const fullRoute = (ctx: Context) => composeK(dabaMiddleware, loggerMiddleware)(ctx)
+// const fullRoute = (ctx: Context) => composeK(dabaMiddleware, loggerMiddleware)(ctx)
 
-const fullRouteTwo = (ctx: Context) => composeK(dabaMiddleware, composeK(loggerMiddleware, dabaMiddleware))(ctx)
+// const fullRouteTwo = (ctx: Context) => composeK(dabaMiddleware, composeK(loggerMiddleware, dabaMiddleware))(ctx)
 
-const compose3 = <A, B, C, D, E, G, F, J, H> (a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>) => composeK(a, composeK(b, c))
+// const compose3 = <A, B, C, D, E, G, F, J, H> (a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>) => composeK(a, composeK(b, c))
 
-const a = compose3(loggerMiddleware, dabaMiddleware, loggerMiddleware)
+// const a = compose3(loggerMiddleware, dabaMiddleware, loggerMiddleware)
 
 // TODO: write compose as overloads
 

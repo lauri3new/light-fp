@@ -1,186 +1,96 @@
-/* eslint-disable  */
-// TODO: write demo route handlers + middleware using PromiseEither
-import express, { Request, Response, Router } from 'express'
-import { PromiseEither, fromPromiseOptionF } from '../PromiseEither'
-import { Right, Left, Either } from '../Either'
+
+import { Request, Response } from 'express'
+import { PromiseEither } from '../PromiseEither'
 import {
-  Result, OK, BadRequest, InternalServerError,
+  Result, resultAction, InternalServerError,
 } from './result'
-import { Some } from '../Option'
 
-const app = express()
-
-const router = express.Router()
-
-interface User {
-  id: number
-  name: string
-}
+type middleware <A extends Context, B extends A> = (ctx: A) => PromiseEither<Result, B>
+type handler <B extends Context = Context> = (ctx: B) => Promise<Result>
 
 export interface Context {
   req: Request
 }
 
-interface AuthRequest {
-  req: Request
-  user: User
-}
-
-// const route = (handler: (_: Request) => PromiseEither<Result, Result>) => (ctx: Request, res: Response) => (ctx) => handler
-const runResponse = (res: Response, result: Result) => res.status(result.status).send(result.body).setHeader('content-type', result.contentType || 'application/json')
-type HttpEffect<A> = Promise<void>
-type handler = <A extends Context, B>(a: (ctx: A) => Promise<B>) => (ctx: A, res: Response) => HttpEffect<B>
-// type handlerFn = <A, B>(ctx: B, res: Response) => HttpEffect<A>
-const handler = <A extends Context, B>(a: (ctx: A) => Promise<Result<B>>) => (ctx: A, res: Response): HttpEffect<B> => a(ctx).then(
-  result => runResponse(res, result),
-)
-
-const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
-
-const authMiddleware = async <A extends Context>(ctx: A): Promise<Either<Result, AuthRequest>> => {
-  const token = ctx.req.headers.authorization
-  if (!token) {
-    return Left(BadRequest("sorry no token"))
-  }
-  const dbtoken = await tokenLookup(token)
-  return dbtoken.match(
-    token => Right({
-      ...ctx,
-      user: { id: 1, name: 'sef' }
-    }),
-    () => Left(BadRequest("sorry you are not logged in"))
-  )
-}
-
-interface daba {
-  daba: string
-}
-
-export interface dabaRequest {
-  daba: daba,
-  req: Request
-}
-
-const dabaMiddleware = async <A extends Context>(ctx: A): Promise<Either<Result, A & dabaRequest>> => {
-  return Right({
-    ...ctx,
-    daba: {
-      daba: '123'
-    } 
-  })
-}
-
-const loggerMiddleware = async <A extends Context>(ctx: A): Promise<Either<Result, A>> => {
-  return Right(ctx)
-}
-
-router.get('/', authMiddleware)
-
-enum userErrors {
-  notFound = 'user was not found'
-}
-
-const getUserTwo = (id: number) => PromiseEither(new Promise<Either<userErrors, User>>((res, rej) => {
-  setTimeout(() => {
-    if (Math.random() < 0.3) {
-      return res(Right({
-        id,
-        name: 'jabba',
-      }))
-    }
-    if (Math.random() < 0.3) {
-      return res(Left(userErrors.notFound))
-    }
-    // eslint-disable-next-line no-throw-literal
-    return rej(new Error('boom'))
-  })
-}))
-
-enum friendsErrors {
-  notFound = 'friends were not found'
-}
-
-const getFriendsByUsernameTwo = (name: string) => PromiseEither(new Promise<Either<friendsErrors, User[]>>((res, rej) => {
-  setTimeout(() => {
-    if (Math.random() < 0.3) {
-      return res(Right([{
-        id: 4,
-        name: 'jabba',
-      }]))
-    }
-    if (Math.random() < 0.3) {
-      return res(Left(friendsErrors.notFound))
-    }
-    // eslint-disable-next-line no-throw-literal
-    return rej(new Error('boom'))
-  })
-}))
-
-const orBadRequest = <A extends string, B> (a: PromiseEither<A, B>) => a.leftMap((ue: string) => BadRequest(ue))
-
-const mapErrors = <A, B>(a:A, f:(_:A) => B): B => f(a)
-
-const userHandlerTwo = handler((ctx: Context) => PromiseEither(authMiddleware(ctx))
-  .flatMap((ctx) => {
-    return getUserTwo(1)
-    .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
-    .flatMapF(async user => Right(user))
-    .flatMapF(async ({ user }) => {
-      const [ a ] = await Promise.all([
-        getFriendsByUsernameTwo(user.name).__val, getUserTwo(1).__val
-      ])
-      return a
-    })
-    .leftMap((a): Result => {
-      switch (a) {
-        case userErrors.notFound:
-          return BadRequest(userErrors.notFound)
-        case friendsErrors.notFound:
-          return BadRequest(userErrors.notFound)
-      }
-    })
-  })
-    .onComplete(
-      data => OK(data),
-      r => r,
-      InternalServerError,
-    ))
-// build a typed router ?
 enum HttpMethods {
-  GET = 'get'
+  GET = 'get',
+  POST = 'post',
+  PUT = 'put',
+  DELETE = 'delete',
+  PATCH = 'patch',
+  OPTIONS = 'options'
 }
-// registratio
 
-app.listen(3000, () => console.log('Example app listening on port!'))
+interface routeHandlersObj<A extends Context> {
+  [path: string]: {
+    method: HttpMethods,
+    handler: handler<A>
+  }
+}
 
+type HttpEffect<A> = Promise<void>
 
-// good enough for now, look into kleisli otherwise
-// to be able to write something like middleware.andThen.handler
-const globalMiddlewares = (ctx: Context) => PromiseEither(authMiddleware(ctx))
-  .flatMapF(dabaMiddleware)
-
-const userHandler = (ctx: Context) => globalMiddlewares(ctx)
-.flatMap((ctx) => {
-  return getUserTwo(1)
-  .flatMap(user => getFriendsByUsernameTwo(user.name).map(friends => ({ user, friends })))
-  .flatMapF(async user => Right(user))
-  .flatMapF(async ({ user }) => {
-    const [ a ] = await Promise.all([
-      getFriendsByUsernameTwo(user.name).__val, getUserTwo(1).__val
-    ])
-    return a
-  })
-  .leftMap((a) => {
-    switch (a) {
-      case userErrors.notFound:
-        return BadRequest(userErrors.notFound)
-      case friendsErrors.notFound:
-        return BadRequest(userErrors.notFound)
+export const runResponse = (res: Response, result: Result) => {
+  res.set('content-type', result.contentType || 'application/json')
+  const {
+    headers, cookies, clearCookies, action,
+  } = result
+  if (headers) {
+    res.set(headers)
+  }
+  if (cookies) {
+    cookies.forEach((cookie) => {
+      const { name, value, ...options } = cookie
+      res.cookie(name, value, options)
+    })
+  }
+  if (clearCookies) {
+    clearCookies.forEach((clearCookie) => {
+      const { name, ...options } = clearCookie
+      res.clearCookie(name, options)
+    })
+  }
+  if (action) {
+    const [resMethod, firstarg, options, cb] = action
+    if (resMethod === resultAction.redirect) {
+      return res[resMethod](firstarg)
     }
-  })
-})
-  .onComplete(
-    data => OK(data),
-    r => r,
-    InternalServerError,
+    if (resMethod === resultAction.sendFile) {
+      return res[resMethod](firstarg, options)
+    }
+    if (resMethod === resultAction.render) {
+      return res[resMethod](firstarg, options, cb)
+    }
+  }
+  res.status(result.status).send(result.body)
+}
+
+export const handler = <A>(
+  a: (ctx: Context) => Promise<Result<A>>,
+) => (req: Request, res: Response): HttpEffect<A> => a({ req }).then(
+    result => runResponse(res, result),
   )
+
+export const handlerM = <A extends Request, B extends Context>(
+  mwsa: middleware<Context, B>, a: handler<B>, onMiddlewareError: (e?: Error) => Result = () => InternalServerError(''),
+) => async (req: Request, res: Response): HttpEffect<A> => mwsa({ req }).onComplete(
+    a,
+    async i => i,
+    onMiddlewareError,
+  ).then(async t => {
+    const result = await t
+    runResponse(res, result)
+  })
+
+// const lRouter = <A extends Context>(middleware: middleware<Context, A>, routeHandlersObj: routeHandlersObj<A>): Router => {
+//   const _router = Router()
+//   Object.keys(routeHandlersObj).forEach((path) => {
+//     const { method, handler } = routeHandlersObj[path]
+//     _router[method](path, routeHandler(async (ctx) => middleware(ctx).onComplete(
+//       lreq => handler(lreq),
+//       i => i,
+//       () => InternalServerError('ad'),
+//     )))
+//   })
+//   return _router
+// }
