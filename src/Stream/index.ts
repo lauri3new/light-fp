@@ -15,7 +15,8 @@ interface Stream<E, A> {
   concat: (_: Stream<E, A>) => Stream<E, A>,
   take: (n: number) => Stream<E, A>,
   takeWhile: (f: (_:A) => Boolean) => Stream<E, A>,
-  filter: (f: (_:A) => Boolean) => Stream<E, A>
+  filter: (f: (_:A) => Boolean) => Stream<E, A>,
+  buffer: (n: number) => Stream<E, A[]>,
 }
 
 const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A> => ({
@@ -118,6 +119,29 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
       },
     })))
   },
+  buffer: (n: number) => Stream<E, A[]>((_sink: Sink<E, A[]>) => {
+    let vals: A[] = []
+    let emit = false
+    const inter = setInterval(() => {
+      emit = true
+    }, n)
+    const a = dataProvider(({
+      ..._sink,
+      onNext: (l) => {
+        if (emit) {
+          _sink.onNext([...vals, l])
+          emit = false
+          vals = []
+        } else {
+          vals.push(l)
+        }
+      },
+    }))
+    return () => {
+      clearInterval(inter)
+      a()
+    }
+  }),
 })
 
 const fromPromise = <E, A>(a: Promise<A>) => Stream((_sink: Sink<E, A>) => {
@@ -140,7 +164,7 @@ const i = Stream<never, number>((observer) => {
   return () => clearInterval(avd)
 })
 
-i.take(5).scan((a, b) => a + b, 0).filter(a => a < 5).subscribe({
+i.scan((a, b) => a + b, 0).buffer(2000).subscribe({
   onNext: b => console.log('next', b),
   onError: (e) => console.log('error', e),
   onComplete: () => console.log('complete'),
