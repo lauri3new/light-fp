@@ -92,9 +92,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
         if (b < n) {
           _sink.onNext(a)
           b += 1
-          return
         }
-        return _sink.onComplete()
       },
     })))
   },
@@ -171,48 +169,24 @@ const i = Stream<never, number>((observer) => {
 
 const astream = Stream<never, number>((observer) => {
   const avd = setInterval(() => {
-    observer.onNext(2)
+    observer.onNext(1)
   }, 500)
   return () => clearInterval(avd)
 })
 
-const bstream = (n: number) => Stream<never, number>((observer) => {
+const bstream = Stream<never, number>((observer) => {
   const avd = setInterval(() => {
-    observer.onNext(n + 100)
-    observer.onNext(n + 200)
-  }, 2000)
-  return () => {}
+    observer.onNext(1)
+  }, 500)
+  return () => clearInterval(avd)
 })
 
-astream.flatMap(bstream).subscribe({
-  onNext: b => console.log('next', b),
-  onError: (e) => console.log('error', e),
-  onComplete: () => console.log('complete'),
-})
-
-// i.scan((a, b) => a + b, 0).buffer(2000).subscribe({
-//   onNext: b => console.log('next', b),
-//   onError: (e) => console.log('error', e),
-//   onComplete: () => console.log('complete'),
-// })
-
-// const a = Stream((observer: Sink<string, number>) => {
-//   observer.onNext(1)
-//   observer.onNext(2)
-//   observer.onComplete()
-//   return () => {}
-// })
-
-// const ba = (n: number) => Stream((observer: Sink<never, number>) => {
-//   observer.onNext(n + 100)
-//   observer.onNext(n + 100)
-//   observer.onComplete()
-//   observer.onNext(n + 200)
-//   return () => {}
-// })
-
-// a.flatMap(ba).scan((j, b) => j + b, 0).subscribe({
-//   onNext: b => console.log('next', b),
-//   onError: (e) => console.log('error', e),
-//   onComplete: () => console.log('complete'),
-// })
+astream.map(a => a + 1)
+  .merge(bstream.map(a => a + 10).take(1))
+  .take(5)
+  .scan((a, b) => a + b, 0)
+  .subscribe({
+    onNext: b => console.log('next', b),
+    onError: (e) => console.log('error', e),
+    onComplete: () => console.log('complete'),
+  })
