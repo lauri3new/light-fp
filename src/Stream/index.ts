@@ -124,6 +124,11 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
     let emit = false
     const inter = setInterval(() => {
       emit = true
+      if (vals.length > 0) {
+        _sink.onNext([...vals])
+        emit = false
+        vals = []
+      }
     }, n)
     const a = dataProvider(({
       ..._sink,
@@ -164,11 +169,32 @@ const i = Stream<never, number>((observer) => {
   return () => clearInterval(avd)
 })
 
-i.scan((a, b) => a + b, 0).buffer(2000).subscribe({
+const astream = Stream<never, number>((observer) => {
+  const avd = setInterval(() => {
+    observer.onNext(2)
+  }, 500)
+  return () => clearInterval(avd)
+})
+
+const bstream = (n: number) => Stream<never, number>((observer) => {
+  const avd = setInterval(() => {
+    observer.onNext(n + 100)
+    observer.onNext(n + 200)
+  }, 2000)
+  return () => {}
+})
+
+astream.flatMap(bstream).subscribe({
   onNext: b => console.log('next', b),
   onError: (e) => console.log('error', e),
   onComplete: () => console.log('complete'),
 })
+
+// i.scan((a, b) => a + b, 0).buffer(2000).subscribe({
+//   onNext: b => console.log('next', b),
+//   onError: (e) => console.log('error', e),
+//   onComplete: () => console.log('complete'),
+// })
 
 // const a = Stream((observer: Sink<string, number>) => {
 //   observer.onNext(1)
