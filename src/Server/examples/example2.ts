@@ -1,8 +1,7 @@
 import express from 'express'
 import { Context, handlerM } from '../handler'
 import { OK, BadRequest } from '../result'
-import { Right, Left } from '../../Either'
-import { Either } from '../../Option'
+import { Right, Left, Either } from '../../Either'
 
 const app = express()
 const router = express.Router()
@@ -12,17 +11,16 @@ interface User {
   id: number
 }
 
-const tokenLookup = async (token: string) => {
+const tokenLookup = (token: string): Either<string, User> => {
   const user: User = { name: 'jabba', id: 1 }
   return ((Math.random() > 0.5)
     ? Right(user)
     : Left('user dos not exist.'))
 }
 
-const getToken = (ctx: Context) => (ctx.req.headers.authorization ? Right(ctx.req.headers.authorization) : Left('sef'))
+const getToken = (ctx: Context): Either<string, string> => (ctx.req.headers.authorization ? Right(ctx.req.headers.authorization) : Left('sef'))
 
-const authMiddleware = <A extends Context>(ctx: A) => getToken(ctx)
-  .map(b => b)
+const authMiddleware = <A extends Context>(ctx: A) => getToken(ctx).map()
 
 // .flatMapF(async (token) => tokenLookup(token))
 // .map(user => ({ ...ctx, user }))
