@@ -16,20 +16,20 @@ export const query = <B extends object>(a: yup.ObjectSchema<B>) => <A extends Co
 }
 
 const param = <B extends object>(a: yup.ObjectSchema<B>) => <A extends Context>(ctx: A) => {
-  const { query: _query } = ctx.req
-  return PromiseEither(PEfromValidation(a, _query)).map(query => ({ ...ctx, query }))
+  const { param: _param } = ctx.req
+  return PromiseEither(PEfromValidation(a, _param)).map(p => ({ ...ctx, param: p }))
 }
 
 const body = <B extends object>(a: yup.ObjectSchema<B>) => <A extends Context>(ctx: A) => {
-  const { query: _query } = ctx.req
-  return PromiseEither(PEfromValidation(a, _query)).map(query => ({ ...ctx, query }))
+  const { body: _body } = ctx.req
+  return PromiseEither(PEfromValidation(a, _body)).map(b => ({ ...ctx, body: b }))
 }
 
 // TODO: yup.object combining
 
 const paginationParams = yup.object({
   page: yup.string(),
-  query: yup.string(),
+  query: yup.string()
 })
 
 export type query = yup.InferType<typeof paginationParams>

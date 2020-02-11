@@ -37,22 +37,22 @@ export const Right = <A, E = never>(a: A): Either<E, A> => ({
   map: f => Right(f(a)),
   leftMap: f => Right(a),
   flatMap: f => f(a),
-  match: (f, g) => g(a),
+  match: (f, g) => g(a)
 })
 
-export const Left = <A>(a: A): Either<A, never> => ({
+export const Left = <E, A = never>(a: E): Either<E, A> => ({
   _tag: 'none',
   get: () => a,
   // orElse: b => b,
-  map: _ => Left<A>(a),
+  map: _ => Left<E>(a),
   leftMap: f => Left(f(a)),
-  flatMap: _ => Left<A>(a),
-  match: (f, g) => f(a),
+  flatMap: _ => Left<E>(a),
+  match: (f, g) => f(a)
 })
 
 export const fromOption = <A, B>(a: Option<A>, left?: B) => a.match(
   someA => Right(someA),
-  () => Left(left),
+  () => Left(left)
 )
 
 // export const sequence = <A, B>(as: Either<A, B>[]): Either<A, B[]> => as.reduce(

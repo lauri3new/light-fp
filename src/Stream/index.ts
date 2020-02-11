@@ -42,12 +42,12 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
           sink.onError(e)
         }
         state = error
-      },
+      }
     })
   },
   map: <B>(g: (_:A) => B) => Stream<E, B>((_sink: Sink<E, B>) => dataProvider(({
     ..._sink,
-    onNext: (a) => _sink.onNext(g(a)),
+    onNext: (a) => _sink.onNext(g(a))
   }))),
   flatMap: <EE, B>(g: (_:A) => Stream<EE, B>) => Stream<EE | E, B>((_sink: Sink<EE | E, B>) => dataProvider(({
     ..._sink,
@@ -55,9 +55,9 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
       g(a).subscribe({
         ..._sink,
         onError: () => {},
-        onComplete: () => {},
+        onComplete: () => {}
       })
-    },
+    }
   }))),
   scan: <B>(g: (_:A, __:B) => B, initial: B) => {
     let b = initial
@@ -67,7 +67,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
         const sc = g(a, b)
         _sink.onNext(sc)
         b = sc
-      },
+      }
     })))
   },
   merge: (s: Stream<E, A>) => Stream((_sink: Sink<E, A>) => {
@@ -82,7 +82,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
     ..._sink,
     onComplete: () => {
       s.subscribe(_sink)
-    },
+    }
   })),
   take: (n: number) => {
     let b = 0
@@ -93,7 +93,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
           _sink.onNext(a)
           b += 1
         }
-      },
+      }
     })))
   },
   filter: (f: (_:A) => Boolean) => Stream<E, A>((_sink: Sink<E, A>) => dataProvider(({
@@ -102,7 +102,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
       if (f(a)) {
         _sink.onNext(a)
       }
-    },
+    }
   }))),
   takeWhile: (f: (_:A) => Boolean) => {
     let b = true
@@ -114,7 +114,7 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
         } else {
           b = false
         }
-      },
+      }
     })))
   },
   buffer: (n: number) => Stream<E, A[]>((_sink: Sink<E, A[]>) => {
@@ -138,13 +138,13 @@ const Stream = <E, A>(dataProvider: (_: Sink<E, A>) => unsubscribe): Stream<E, A
         } else {
           vals.push(l)
         }
-      },
+      }
     }))
     return () => {
       clearInterval(inter)
       a()
     }
-  }),
+  })
 })
 
 const fromPromise = <E, A>(a: Promise<A>) => Stream((_sink: Sink<E, A>) => {
@@ -159,13 +159,6 @@ const fromPromise = <E, A>(a: Promise<A>) => Stream((_sink: Sink<E, A>) => {
 })
 
 // example
-
-const i = Stream<never, number>((observer) => {
-  const avd = setInterval(() => {
-    observer.onNext(2)
-  }, 500)
-  return () => clearInterval(avd)
-})
 
 const astream = Stream<never, number>((observer) => {
   const avd = setInterval(() => {
@@ -182,11 +175,11 @@ const bstream = Stream<never, number>((observer) => {
 })
 
 astream.map(a => a + 1)
-  .merge(bstream.map(a => a + 10).take(1))
+  .merge(bstream.map(a => a + 10).take(2))
   .take(5)
   .scan((a, b) => a + b, 0)
   .subscribe({
     onNext: b => console.log('next', b),
     onError: (e) => console.log('error', e),
-    onComplete: () => console.log('complete'),
+    onComplete: () => console.log('complete')
   })

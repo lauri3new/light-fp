@@ -39,7 +39,7 @@ export const Result = <A = body>(status: httpStatus, body: A, contentType = 'app
   status,
   body,
   contentType,
-  map: <B>(f: (_: Result<A>) => Result<A>) => f(Result(status, body, contentType)),
+  map: <B>(f: (_: Result<A>) => Result<A>) => f(Result(status, body, contentType))
 })
 
 export const OK = <A>(body: A) => Result(httpStatus.OK, body)
@@ -49,28 +49,28 @@ export const NotFound = <A>(body: A) => Result(httpStatus.NotFound, body)
 
 export const withCookies = <A extends Result>(cookies: Cookie[]) => (a: A) => ({
   ...a,
-  cookies,
+  cookies
 })
 
 export const clearCookies = <A extends Result>(cookies: ClearCookie[]) => (a: A) => ({
   ...a,
-  clearCookies: cookies,
+  clearCookies: cookies
 })
 
 export const withContentType = <A extends Result>(contentType: string) => (a: A) => ({
   ...a,
-  contentType,
+  contentType
 })
 
 export const withHeaders = <A extends Result>(headers: { [key: string]: string }) => (a: A) => ({
   ...a,
   headers: {
     ...a.headers,
-    ...headers,
-  },
+    ...headers
+  }
 })
 
 export const withAction = <A extends Result>(action: [ resultAction, string] | [ resultAction, string, object]) => (a: A) => ({
   ...a,
-  action,
+  action
 })

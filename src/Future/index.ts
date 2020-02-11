@@ -19,9 +19,9 @@ export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   __val: val,
   map: <B>(f: (_:A) => B) => Future<B>(() => val().then(a => f(a))),
   flatMap: <B>(f: (_:A) => Future<B>) => Future<B>(
-    () => val().then(a => toPromise(f(a))),
+    () => val().then(a => toPromise(f(a)))
   ),
-  fork: <B>(f: (_:A) => B, g: (_?: any) => B): Promise<B> => val().then(a => f(a)).catch(e => g(e)),
+  fork: <B>(f: (_:A) => B, g: (_?: any) => B): Promise<B> => val().then(a => f(a)).catch(e => g(e))
 })
 
 const fromPromise = <A>(a:Promise<A>): Future<A> => Future(() => a)

@@ -25,21 +25,21 @@ export const PromiseEither = <A, B>(val: Promise<Either<A, B>>): PromiseEither<A
   flatMap: <E, C>(f: (_:B) => PromiseEither<A | E, C>) => PromiseEither<A | E, C>(
     val.then(eitherA => eitherA.match(
       none => Promise.resolve<Either<A, C>>(Left(none)),
-      some => f(some).__val,
-    )),
+      some => f(some).__val
+    ))
   ),
   flatMapF: <E, C>(f: (_:B) => Promise<Either<A | E, C>>) => PromiseEither<A | E, C>(val.then(eitherA => eitherA.match(
     none => Promise.resolve<Either<A, C>>(Left(none)),
-    some => f(some),
+    some => f(some)
   ))),
   onComplete: <C, D, E>(f: (_:B) => C, g: (_:A) => D, j: (_?: any) => E) => val.then(
     (a) => a.match(
       none => g(none),
-      some => f(some),
-    ),
+      some => f(some)
+    )
   ).catch(
-    j,
-  ),
+    j
+  )
 })
 
 
@@ -47,17 +47,29 @@ export const PromiseEither = <A, B>(val: Promise<Either<A, B>>): PromiseEither<A
 //   (acc, item) => item.flatMap(ia => acc.flatMapF(iacc => Promise.resolve(Right([...iacc, ia])))), (PromiseEither(Promise.resolve(Right<any>([])))),
 // )
 
+export const fromEither = <E, A>(a: Either<E, A>) => PromiseEither(Promise.resolve(a))
+
+export const fromNullable = <A, B>(a: A | null | undefined) => {
+  if (a === null) {
+    return Left(null)
+  }
+  if (a === undefined) {
+    return Left(null)
+  }
+  return Right<A>(a)
+}
+
 export const fromPromiseOption = <A>(poa: PromiseOption<A>) => PromiseEither<undefined, A>(poa.onComplete(
   someA => Right(someA),
   () => Left(undefined),
-  error => { throw error },
+  error => { throw error }
 ))
 
 export const fromPromiseOptionF = <A>(poa: Promise<Option<A>>) => PromiseEither<undefined, A>(poa.then(
   optA => optA.match(
     someA => Right(someA),
-    () => Left(undefined),
-  ),
+    () => Left(undefined)
+  )
 ))
 
 fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))

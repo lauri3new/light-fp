@@ -2,7 +2,7 @@
 import { Request, Response } from 'express'
 import { PromiseEither } from '../PromiseEither'
 import {
-  Result, resultAction, InternalServerError,
+  Result, resultAction, InternalServerError
 } from './result'
 
 type middleware <A extends Context, B extends A> = (ctx: A) => PromiseEither<Result, B>
@@ -33,7 +33,7 @@ type HttpEffect<A> = Promise<void>
 export const runResponse = (res: Response, result: Result) => {
   res.set('content-type', result.contentType || 'application/json')
   const {
-    headers, cookies, clearCookies, action,
+    headers, cookies, clearCookies, action
   } = result
   if (headers) {
     res.set(headers)
@@ -66,17 +66,17 @@ export const runResponse = (res: Response, result: Result) => {
 }
 
 export const handler = <A>(
-  a: (ctx: Context) => Promise<Result<A>>,
+  a: (ctx: Context) => Promise<Result<A>>
 ) => (req: Request, res: Response): HttpEffect<A> => a({ req }).then(
-    result => runResponse(res, result),
+    result => runResponse(res, result)
   )
 
 export const handlerM = <A extends Request, B extends Context>(
-  mwsa: middleware<Context, B>, a: handler<B>, onMiddlewareError: (e?: Error) => Result = () => InternalServerError(''),
+  mwsa: middleware<Context, B>, a: handler<B>, onMiddlewareError: (e?: Error) => Result = () => InternalServerError('')
 ) => async (req: Request, res: Response): HttpEffect<A> => mwsa({ req }).onComplete(
     a,
     async i => i,
-    onMiddlewareError,
+    onMiddlewareError
   ).then(async t => {
     const result = await t
     runResponse(res, result)

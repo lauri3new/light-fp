@@ -20,24 +20,24 @@ export const PromiseOption = <A>(val: Promise<Option<A>>): PromiseOption<A> => (
   flatMap: <B>(f: (_:A) => PromiseOption<B>) => PromiseOption<B>(
     val.then(option => option.match(
       some => f(some).__val,
-      () => Promise.resolve<Option<B>>(None()),
-    )),
+      () => Promise.resolve<Option<B>>(None())
+    ))
   ),
   flatMapF: <B>(f: (_:A) => Promise<Option<B>>) => PromiseOption<B>(val.then(optionA => optionA.match(
     some => f(some),
-    () => Promise.resolve<Option<B>>(None()),
+    () => Promise.resolve<Option<B>>(None())
   ))),
   onComplete: <C, D, E>(f: (_:A) => C, g: () => D, j: (_?: any) => E) => val.then(
     (a) => a.match(
       some => f(some),
-      () => g(),
-    ),
+      () => g()
+    )
   ).catch(
-    j,
-  ),
+    j
+  )
 })
 
 
 export const sequence = <A>(as: PromiseOption<A>[]): PromiseOption<A[]> => as.reduce(
-  (acc, item) => item.flatMap(ia => acc.flatMapF(iacc => Promise.resolve(Some([...iacc, ia])))), (PromiseOption(Promise.resolve(Some<any>([])))),
+  (acc, item) => item.flatMap(ia => acc.flatMapF(iacc => Promise.resolve(Some([...iacc, ia])))), (PromiseOption(Promise.resolve(Some<any>([]))))
 )

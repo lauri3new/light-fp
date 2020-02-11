@@ -28,6 +28,7 @@ module.exports = {
     'max-len': 'warn',
     'no-underscore-dangle': 'off',
     'default-case': 'off',
-    'consistent-return': 'off'
+    'consistent-return': 'off',
+    'comma-dangle': ['error', 'never']
   },
 };

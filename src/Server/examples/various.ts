@@ -285,7 +285,7 @@
 //     ...ctx,
 //     daba: {
 //       daba: '123'
-//     } 
+//     }
 //   })
 // }
 
@@ -478,7 +478,7 @@
 //   )
 // }
 
-// const userHandler = handler((req: Request) => 
+// const userHandler = handler((req: Request) =>
 //   getUser(1)
 //   .flatMap(user => getFriendsByUsername(user.name).map(friends => ({ user, friends })))
 //   .flatMapF(async user => Right(user))
@@ -575,7 +575,6 @@
 // app.use('*', (ctx, res) => res.send({ ok: 404 }))
 
 // app.listen(3000, () => console.log('Example app listening on port!'))
-
 
 
 // import express, { Request, Response, Router } from 'express'

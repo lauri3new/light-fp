@@ -21,14 +21,14 @@ interface FutureOption<A> {
 const FutureOption = <A>(value: Promise<Option<A>>): FutureOption<A> => ({
   value,
   map: <B>(f:(_:A) => B) => FutureOption<B>(
-    value.then(a => a.map(f)),
+    value.then(a => a.map(f))
   ),
   flatMap: <B>(f:(_:A) => Promise<Option<B>>) => FutureOption<B>(
     value.then((optA) => optA.match(
       someA => f(someA),
-      (): Promise<Option<B>> => Promise.resolve(None()),
-    )),
-  ),
+      (): Promise<Option<B>> => Promise.resolve(None())
+    ))
+  )
 })
 
 const sleep = () => new Promise((res) => setTimeout(() => res(), 3000))
