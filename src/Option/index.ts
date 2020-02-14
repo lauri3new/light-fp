@@ -3,22 +3,12 @@ import { map } from '../Object'
 export interface Option<A> {
   _tag: string
   get: () => A | null
-  map:<B>(f:(_: A) => B) => Option<A | B>
+  map:<B>(f:(_: A) => B) => Option<B>
   getOrElse:<B>(_:B) => A | B
   flatMap:<B>(f:(_: A) => Option<B>) => Option<B>
   orElse:<B>(_: Option<B>) => Option<A> | Option<B>
   filter:(f:(_:A) => boolean) => Option<A>
   match:<B, C>(f:(_:A) => B, g:() => C) => B | C
-}
-
-export interface Either<E, A> {
-  _tag: string
-  get: () => E | A
-  // orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
-  leftMap:<B>(f:(_: E) => B) => Either<B, A>
-  map:<B>(f:(_: A) => B) => Either<E, B>
-  flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E | EE, B>
-  match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B | C
 }
 
 // export interface None<A> extends Option<A> {
@@ -37,7 +27,7 @@ export interface Either<E, A> {
 export const None = <A>(): Option<A> => ({
   _tag: 'none',
   get: () => null,
-  map: f => None<A>(),
+  map: f => None(),
   getOrElse: b => b,
   orElse: b => b,
   flatMap: f => None(),

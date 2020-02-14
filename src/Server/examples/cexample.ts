@@ -7,6 +7,7 @@ router.get('/user', (req, res) => {
   res.send('hello world!')
 })
 
+
 app.use(router)
 
 app.listen(3000)

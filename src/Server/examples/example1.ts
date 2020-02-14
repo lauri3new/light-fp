@@ -6,7 +6,7 @@ const app = express()
 const router = express.Router()
 
 router.get('/user', handler(
-  async () => OK('hello world!') // () => Promise.resolve(OK('hello world!'))
+  async (ctx) => OK('hello world!') // () => Promise.resolve(OK('hello world!'))
 ))
 
 app.use(router)

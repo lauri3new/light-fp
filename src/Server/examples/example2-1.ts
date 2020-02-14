@@ -12,25 +12,27 @@ interface User {
   id: number
 }
 
-const tokenLookup = async (token: string) => ((Math.random() > 0.5)
-  ? Right<User>({ name: 'jabba', id: 1 })
+const lookupUserFromToken = async (token: string) => ((Math.random() > 0.5)
+  ? Right<User>({ name: 'sam', id: 1 })
   : Left<string>('user dos not exist.'))
 
 const getToken = (ctx: Context) => fromNullable(ctx.req.headers.authorization)
 
-const authMiddleware = <A extends Context>(ctx: A) => fromEither(getToken(ctx))
-  .flatMapF(async (token) => tokenLookup(token))
+// eslint-disable-next-line import/prefer-default-export
+export const authMiddleware = <A extends Context>(ctx: A) => fromEither(getToken(ctx))
+  .flatMapF(async (token) => lookupUserFromToken(token))
   .map(user => ({ ...ctx, user }))
   .leftMap((a) => {
+    // switch case
     if (a === null) {
       return BadRequest('no access token provided')
     }
     return BadRequest(a)
   })
 
-router.get('/user', handlerM(authMiddleware, async ({ user }) => OK({
+router.get('/user', handlerM(authMiddleware, async (ctx) => OK({
   type: 'User',
-  data: user
+  data: ctx.user
 })))
 
 app.use(router)

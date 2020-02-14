@@ -10,25 +10,8 @@ export interface Either<E, A> {
   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B | C
 }
 
-// export interface Left<E, A> extends Either<E, A> {
-//   _tag: string
-//   get: () => any
-//   orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
-//   map:<B>(f:(_: A) => B) => Either<E, B>
-//   leftMap:<B>(f:(_: E) => B) => Either<B, A>
-//   flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E, B>
-//   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => B
-// }
-
-// export interface Right<E, A> extends Either<E, A> {
-//   _tag: string
-//   get: () => any
-//   orElse: <EE, B>(_:Either<EE, B>) => Either<E, A> | Either<EE, B>
-//   map:<B>(f:(_: A) => B) => Either<E, B>
-//   leftMap:<B>(f:(_: E) => B) => Either<B, A>
-//   flatMap:<EE, B>(f:(_: A) => Either<E | EE, B>) => Either<E | EE, B>
-//   match:<B, C>(f:(_:E) => B, g:(_:A) => C) => C
-// }
+export type Right<A> = Either<never, A>
+export type Left<E> = Either<E, never>
 
 export const Right = <A, E = never>(a: A): Either<E, A> => ({
   _tag: 'some',

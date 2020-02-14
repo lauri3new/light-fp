@@ -127,7 +127,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right({
 //         id,
-//         name: 'jabba',
+//         name: 'sam',
 //       }))
 //     }
 //     if (Math.random() < 0.3) {
@@ -152,7 +152,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right([{
 //         id: 4,
-//         name: 'jabba',
+//         name: 'sam',
 //       }]))
 //     }
 //     if (Math.random() < 0.3) {
@@ -163,14 +163,14 @@
 //   })
 // }))
 
-// const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right('valid') : Left('invalid'))
+// const lookupUserFromToken = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right('valid') : Left('invalid'))
 
 // const authMiddleware = async (ctx: Context): Promise<Either<Result, Context>> => {
 //   const token = ctx.req.headers.authorization
 //   if (!token) {
 //     return Left(BadRequest('sorry no token'))
 //   }
-//   const dbtoken = await tokenLookup(token)
+//   const dbtoken = await lookupUserFromToken(token)
 //   return dbtoken.match(
 //     () => Right(ctx),
 //     () => Left(BadRequest('sorry you are not logged in')),
@@ -254,14 +254,14 @@
 //   result => runResponse(res, result),
 // )
 
-// const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
+// const lookupUserFromToken = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
 
 // const authMiddleware = async <A extends Context>(ctx: A): Promise<Either<Result, AuthRequest>> => {
 //   const token = ctx.req.headers.authorization
 //   if (!token) {
 //     return Left(BadRequest("sorry no token"))
 //   }
-//   const dbtoken = await tokenLookup(token)
+//   const dbtoken = await lookupUserFromToken(token)
 //   return dbtoken.match(
 //     token => Right({
 //       ...ctx,
@@ -304,7 +304,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right({
 //         id,
-//         name: 'jabba',
+//         name: 'sam',
 //       }))
 //     }
 //     if (Math.random() < 0.3) {
@@ -324,7 +324,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right([{
 //         id: 4,
-//         name: 'jabba',
+//         name: 'sam',
 //       }]))
 //     }
 //     if (Math.random() < 0.3) {
@@ -428,7 +428,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right({
 //         id,
-//         name: 'jabba',
+//         name: 'sam',
 //       }))
 //     }
 //     if (Math.random() < 0.3) {
@@ -444,7 +444,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right([{
 //         id: 4,
-//         name: 'jabba',
+//         name: 'sam',
 //       }]))
 //     }
 //     if (Math.random() < 0.3) {
@@ -464,14 +464,14 @@
 //   result => runResponse(res, result),
 // )
 
-// const tokenLookup = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
+// const lookupUserFromToken = (token: string): Promise<Either<string, string>> => Promise.resolve(Math.random() > 0.5 ? Right("valid") : Left("invalid"))
 
 // const authMiddleware = async (ctx: Request): Promise<Either<Result, Request>> => {
 //   const token = ctx.headers.authorization
 //   if (!token) {
 //     return Left(BadRequest("sorry no token"))
 //   }
-//   const dbtoken = await tokenLookup(token)
+//   const dbtoken = await lookupUserFromToken(token)
 //   return dbtoken.match(
 //     token => Right(ctx),
 //     () => Left(BadRequest("sorry you are not logged in"))
@@ -497,7 +497,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right({
 //         id,
-//         name: 'jabba',
+//         name: 'sam',
 //       }))
 //     }
 //     if (Math.random() < 0.3) {
@@ -517,7 +517,7 @@
 //     if (Math.random() < 0.3) {
 //       return res(Right([{
 //         id: 4,
-//         name: 'jabba',
+//         name: 'sam',
 //       }]))
 //     }
 //     if (Math.random() < 0.3) {
