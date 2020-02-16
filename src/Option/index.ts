@@ -33,7 +33,7 @@ export const Some = <A>(a: A): Option<A> => ({
 })
 
 export const isNone = <A>(a: Option<A>): a is Option<A> => a._tag === 'none'
-export const isSomething = <A>(a: Option<A>): a is Option<A> => a._tag === 'some'
+export const isSome = <A>(a: Option<A>): a is Option<A> => a._tag === 'some'
 export const fromNullable = <A>(a: A | null | undefined) => {
   if (a === null) {
     return None()
