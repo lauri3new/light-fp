@@ -29,6 +29,7 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'default-case': 'off',
     'consistent-return': 'off',
+    'no-restricted-syntax': 'off',
     'comma-dangle': ['error', 'never']
   },
 };
