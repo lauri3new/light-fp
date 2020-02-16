@@ -10,7 +10,7 @@ export interface Option<A> {
   match:<B, C>(f:(_:A) => B, g:() => C) => B | C
 }
 
-export const None = <A>(): Option<A> => ({
+export const None = (): Option<never> => ({
   _tag: 'none',
   get: () => null,
   map: f => None(),
@@ -36,10 +36,12 @@ export const isNone = <A>(a: Option<A>): a is Option<A> => a._tag === 'none'
 export const isSomething = <A>(a: Option<A>): a is Option<A> => a._tag === 'some'
 export const fromNullable = <A>(a: A | null | undefined) => {
   if (a === null) {
-    return None<A>()
+    return None()
   }
   if (a === undefined) {
-    return None<A>()
+    return None()
   }
   return Some<A>(a)
 }
+
+const maybeSome = () => (Math.random() > 0.5 ? Some(5) : None())
