@@ -43,5 +43,3 @@ export const fromNullable = <A>(a: A | null | undefined) => {
   }
   return Some<A>(a)
 }
-
-const maybeSome = () => (Math.random() > 0.5 ? Some(5) : None())
