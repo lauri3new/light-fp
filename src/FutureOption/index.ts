@@ -1,15 +1,4 @@
 
-// case class FutOpt[A](value: Future[Option[A]]) {
-
-//   def map[B](f: A => B): FutOpt[B] =
-//     FutOpt(value.map(optA => optA.map(f)))
-//   def flatMap[B](f: A => FutOpt[B]): FutOpt[B] =
-//     FutOpt(value.flatMap(opt => opt match {
-//       case Some(a) => f(a).value
-//       case None => Future.successful(None)
-//     }))
-// }
-
 import { Option, Some, None } from '../Option'
 
 interface FutureOption<A> {
@@ -47,6 +36,3 @@ const abba = FutureOption(Promise.resolve(Some(5)))
     console.log(a)
     return a
   })
-
-// normal option?
-//

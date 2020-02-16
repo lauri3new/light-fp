@@ -2,8 +2,6 @@
 import { Either, Right, Left } from '../Either'
 import { Option, Some, None } from '../Option'
 import { PromiseOption } from '../PromiseOption'
-import { Context } from '../Server/handler'
-import { Result } from '../Server/result'
 
 // TODO: fork and flatMap from Promise<Either<_,_>>
 

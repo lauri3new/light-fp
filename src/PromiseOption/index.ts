@@ -1,5 +1,4 @@
 
-import { Either, Right, Left } from '../Either'
 import { Option, Some, None } from '../Option'
 
 // TODO: fork and flatMap from Promise<Either<_,_>>

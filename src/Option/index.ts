@@ -1,4 +1,3 @@
-import { map } from '../Object'
 
 export interface Option<A> {
   _tag: string
@@ -10,19 +9,6 @@ export interface Option<A> {
   filter:(f:(_:A) => boolean) => Option<A>
   match:<B, C>(f:(_:A) => B, g:() => C) => B | C
 }
-
-// export interface None<A> extends Option<A> {
-//   _tag: string
-//   get: () => any
-//   map:<B>(f:(_: A) => B) => None<any>
-//   getOrElse:<B>(_:B) => B
-//   orElse:<B>(_: Option<B>) => Option<B>
-//   flatMap:<B>(f:(_: A) => Option<B>) => None<any>
-//   filter:(f:(_:A) => boolean) => None<A>
-//   match:<B, C>(f:(_:A) => B, g:() => C) => C
-// }
-
-// type Some<A> = Option<A>
 
 export const None = <A>(): Option<A> => ({
   _tag: 'none',
