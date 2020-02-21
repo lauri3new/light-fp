@@ -7,7 +7,7 @@ export interface Option<A> {
   flatMap:<B>(f:(_: A) => Option<B>) => Option<B>
   orElse:<B>(_: Option<B>) => Option<A> | Option<B>
   filter:(f:(_:A) => boolean) => Option<A>
-  match:<B, C>(f:(_:A) => B, g:() => C) => B | C
+  match:<B, C>(g:() => C, f:(_:A) => B) => B | C
 }
 
 export const None = (): Option<never> => ({
@@ -18,7 +18,7 @@ export const None = (): Option<never> => ({
   orElse: b => b,
   flatMap: f => None(),
   filter: f => None(),
-  match: (f, g) => g()
+  match: (f, g) => f()
 })
 
 export const Some = <A>(a: A): Option<A> => ({
@@ -29,7 +29,7 @@ export const Some = <A>(a: A): Option<A> => ({
   orElse: () => Some(a),
   flatMap: f => f(a),
   filter: f => (f(a) ? Some(a) : None()),
-  match: (f, g) => f(a)
+  match: (f, g) => g(a)
 })
 
 export const isNone = <A>(a: Option<A>): a is Option<A> => a._tag === 'none'
