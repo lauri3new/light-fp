@@ -27,7 +27,7 @@ const FutureEither = <E, B>(val: Future<Either<E, B>>): FutureEither<E, B> => ({
       b => f(b)
     ))
   ),
-  run: <C>(f: (_:B) => C, onFailure: (_:E) => C, g: (_?: any) => C): Promise<C> => val.fork(
+  run: <C>(f: (_:B) => C, onFailure: (_:E) => C, g: (_?: any) => C): Promise<C> => val.run(
     a => a.match(
       left => onFailure(left),
       right => f(right)

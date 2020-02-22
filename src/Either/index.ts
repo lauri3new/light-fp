@@ -31,6 +31,6 @@ export const Left = <E, A = never>(a: E): Either<E, A> => ({
 })
 
 export const fromOption = <A, B>(a: Option<A>, left?: B) => a.match(
-  someA => Right(someA),
-  () => Left(left)
+  () => Left(left),
+  someA => Right(someA)
 )

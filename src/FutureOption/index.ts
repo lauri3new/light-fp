@@ -27,7 +27,7 @@ const FutureOption = <A>(val: Future<Option<A>>): FutureOption<A> => ({
       b => f(b)
     ))
   ),
-  run: <B>(f: (_:A) => B, onFailure: () => B, g: (_?: any) => B): Promise<B> => val.fork(
+  run: <B>(f: (_:A) => B, onFailure: () => B, g: (_?: any) => B): Promise<B> => val.run(
     a => a.match(
       () => onFailure(),
       right => f(right)

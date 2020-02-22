@@ -6,14 +6,13 @@ export interface Future<A> {
   __val: () => Promise<A>
   map: <B>(f:(_:A) => B) => Future<B>
   flatMap: <B>(f:(_:A) => Future<B>) => Future<B>
-  fork: <B>(f: (_:A) => B, g: (_?: any) => B) => Promise<B>
+  run: <B>(f: (_:A) => B, g: (_?: any) => B) => Promise<B>
 }
 
 function toPromise<A>(a:Future<A>): Promise<A> {
-  return a.fork(b => b, c => c)
+  return a.run(b => b, c => c)
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   __tag: 'Future',
   __val: val,
@@ -21,7 +20,7 @@ export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   flatMap: <B>(f: (_:A) => Future<B>) => Future<B>(
     () => val().then(a => toPromise(f(a)))
   ),
-  fork: <B>(f: (_:A) => B, g: (_?: any) => B): Promise<B> => val().then(a => f(a)).catch(e => g(e))
+  run: <B>(f: (_:A) => B, g: (_?: any) => B): Promise<B> => val().then(a => f(a)).catch(e => g(e))
 })
 
 const fromPromise = <A>(a:Promise<A>): Future<A> => Future(() => a)
@@ -42,5 +41,5 @@ const f = resolve(1)
   .flatMap(a => resolve(a + 5))
 
 setTimeout(() => {
-  f.fork(a => console.log('wahoo', a), b => b)
+  f.run(a => console.log('wahoo', a), b => b)
 }, 5000)
