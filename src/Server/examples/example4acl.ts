@@ -55,17 +55,12 @@ const getRoles = <A extends Context>(ctx: A) => PromiseEither<never, Context & c
   }
 })))
 
-router.get('/user', handlerM(getRoles, async (ctx) => {
-  try {
-    const roles = await aclGetUserById(ctx.roles, 1)
-    return roles.match(
-      errorMessage => BadRequest({ error: errorMessage }),
-      user => OK(user)
-    )
-  } catch (e) {
-    return InternalServerError({ error: 'doh' })
-  }
-}))
+router.get('/user', handlerM(getRoles, async (ctx) => PromiseEither(aclGetUserById(ctx.roles, 1))
+  .onComplete(
+    errorMessage => BadRequest({ error: errorMessage }),
+    user => OK(user),
+    () => InternalServerError({ error: 'doh' })
+  )))
 
 app.use(router)
 
