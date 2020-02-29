@@ -1,7 +1,7 @@
 /* eslint-disable no-tabs */
 import { CookieOptions } from 'express'
 
-export type body = Object | Buffer | string | null
+export type body<A extends Object = Object> = A | Buffer | string | null
 
 export interface Cookie extends CookieOptions {
   name: string

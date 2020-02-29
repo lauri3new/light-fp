@@ -1,7 +1,7 @@
 
 import { Option, Some, None } from '../Option'
 
-// TODO: fork and flatMap from Promise<Either<_,_>>
+// TODO: run and flatMap from Promise<Either<_,_>>
 
 export interface PromiseOption<A> {
   __val: Promise<Option<A>>
@@ -18,18 +18,18 @@ export const PromiseOption = <A>(val: Promise<Option<A>>): PromiseOption<A> => (
   map: <B>(f: (_:A) => B) => PromiseOption<B>(val.then(optionA => optionA.map(f))),
   flatMap: <B>(f: (_:A) => PromiseOption<B>) => PromiseOption<B>(
     val.then(option => option.match(
-      some => f(some).__val,
-      () => Promise.resolve<Option<B>>(None())
+      () => Promise.resolve<Option<B>>(None()),
+      some => f(some).__val
     ))
   ),
   flatMapF: <B>(f: (_:A) => Promise<Option<B>>) => PromiseOption<B>(val.then(optionA => optionA.match(
-    some => f(some),
-    () => Promise.resolve<Option<B>>(None())
+    () => Promise.resolve<Option<B>>(None()),
+    some => f(some)
   ))),
   onComplete: <C, D, E>(f: (_:A) => C, g: () => D, j: (_?: any) => E) => val.then(
     (a) => a.match(
-      some => f(some),
-      () => g()
+      () => g(),
+      some => f(some)
     )
   ).catch(
     j

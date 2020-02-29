@@ -3,7 +3,7 @@ import { Either, Right, Left } from '../Either'
 import { Option, Some, None } from '../Option'
 import { PromiseOption } from '../PromiseOption'
 
-// TODO: fork and flatMap from Promise<Either<_,_>>
+// TODO: run and flatMap from Promise<Either<_,_>>
 
 export interface PromiseEither<A, B> {
   __val: Promise<Either<A, B>>
@@ -65,10 +65,13 @@ export const fromPromiseOption = <A>(poa: PromiseOption<A>) => PromiseEither<und
 
 export const fromPromiseOptionF = <A>(poa: Promise<Option<A>>) => PromiseEither<undefined, A>(poa.then(
   optA => optA.match(
-    someA => Right(someA),
-    () => Left(undefined)
+    () => Left(undefined),
+    someA => Right(someA)
   )
 ))
+
+export const peLeft = <E>(e: E) => PromiseEither(Promise.resolve(Left(e)))
+export const peRight = <A>(a: A) => PromiseEither(Promise.resolve(Right(a)))
 
 fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))
 
