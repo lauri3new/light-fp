@@ -40,6 +40,6 @@ const f = resolve(1)
   .flatMap(a => fromPromise(sleep(a + 5)))
   .flatMap(a => resolve(a + 5))
 
-setTimeout(() => {
-  f.run(a => console.log('wahoo', a), b => b)
-}, 5000)
+// setTimeout(() => {
+//   f.run(a => console.log('wahoo', a), b => b)
+// }, 5000)

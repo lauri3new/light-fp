@@ -18,14 +18,10 @@ const validate = query(
   paginationParams
 )
 
-router.get('/user', handlerM(composeK(authMiddleware, validate), async (ctx) => {
-  //
-  console.log(ctx.query)
-  return OK({
-    type: 'User',
-    data: ctx.user
-  })
-}))
+router.get('/user', handlerM(composeK(authMiddleware, validate), async (ctx) => OK({
+  type: 'User',
+  data: ctx.user
+})))
 
 app.use(router)
 

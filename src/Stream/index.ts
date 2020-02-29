@@ -174,12 +174,12 @@ const bstream = Stream<never, number>((observer) => {
   return () => clearInterval(avd)
 })
 
-astream.map(a => a + 1)
-  .merge(bstream.map(a => a + 10).take(2))
-  .take(5)
-  .scan((a, b) => a + b, 0)
-  .subscribe({
-    onNext: b => console.log('next', b),
-    onError: (e) => console.log('error', e),
-    onComplete: () => console.log('complete')
-  })
+// astream.map(a => a + 1)
+//   .merge(bstream.map(a => a + 10).take(2))
+//   .take(5)
+//   .scan((a, b) => a + b, 0)
+//   .subscribe({
+//     onNext: b => console.log('next', b),
+//     onError: (e) => console.log('error', e),
+//     onComplete: () => console.log('complete')
+//   })
