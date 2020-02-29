@@ -1,5 +1,5 @@
 
-import { Option, Some, None } from '../Option'
+import { Option, None } from '../Option'
 import { Future, resolve } from '../Future'
 
 interface FutureOption<A> {
@@ -17,13 +17,13 @@ const FutureOption = <A>(val: Future<Option<A>>): FutureOption<A> => ({
   map: <B>(f: (_:A) => B) => FutureOption<B>(val.map(optionA => optionA.map(f))),
   flatMap: <B>(f: (_:A) => FutureOption<B>) => FutureOption<B>(
     val.flatMap(optionA => optionA.match(
-      () => FutureOption<B>(Future(() => Promise.resolve(None()))).__val,
+      () => FutureOption<B>(resolve(None())).__val,
       b => f(b).__val
     ))
   ),
   flatMapF: <B>(f: (_:A) => Future<Option<B>>) => FutureOption<B>(
     val.flatMap(optionA => optionA.match(
-      () => Future(() => Promise.resolve(None())),
+      () => resolve(None()),
       b => f(b)
     ))
   ),
