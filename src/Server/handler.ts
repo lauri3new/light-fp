@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express'
-import { PromiseEither, composeK } from '../PromiseEither'
+import { PromiseEither, composeK, peRight } from '../PromiseEither'
 import {
   Result, resultAction, InternalServerError
 } from './result'
@@ -93,9 +93,9 @@ export const contextHandler = <A extends Request, B extends Context>(
     runResponse(res, result)
   })
 
-export const contextHandlerM = <A extends Request, B extends Context, C extends B>(
+export const contextHandlerM = <A extends Request, B extends Context>(
   globalMiddleware: middleware<Context, B>, onMiddlewareError: (e?: Error) => Result = () => InternalServerError('')
-) => (handlerMiddleware: middleware<B, C>, a: handler<C>) => async (req: Request, res: Response): HttpEffect<A> => {
+) => <C extends B>(handlerMiddleware: middleware<B, C>, a: handler<C>) => async (req: Request, res: Response): HttpEffect<A> => {
     const b = globalMiddleware({ req }).flatMap(ctx => handlerMiddleware(ctx))
       .onComplete(
         a,
