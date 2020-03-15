@@ -73,8 +73,6 @@ export const fromPromiseOptionF = <A>(poa: Promise<Option<A>>) => PromiseEither<
 export const peLeft = <E>(e: E) => PromiseEither(Promise.resolve(Left(e)))
 export const peRight = <A>(a: A) => PromiseEither(Promise.resolve(Right(a)))
 
-fromPromiseOption(PromiseOption(Promise.resolve(Some(5))))
-
 type PromiseEitherK <A, B, C> = (a: (A)) => PromiseEither<B, C>
 
 export const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
