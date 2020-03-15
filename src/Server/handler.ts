@@ -95,11 +95,14 @@ export const contextHandler = <A extends Request, B extends Context>(
 
 export const contextHandlerM = <A extends Request, B extends Context, C extends B>(
   globalMiddleware: middleware<Context, B>, onMiddlewareError: (e?: Error) => Result = () => InternalServerError('')
-) => (handlerMiddleware: middleware<B, C>, a: handler<B>) => async (req: Request, res: Response): HttpEffect<A> => composeK(globalMiddleware, handlerMiddleware)({ req }).onComplete(
-    a,
-    async i => i,
-    onMiddlewareError
-  ).then(async t => {
-    const result = await t
-    runResponse(res, result)
-  })
+) => (handlerMiddleware: middleware<B, C>, a: handler<C>) => async (req: Request, res: Response): HttpEffect<A> => {
+    const b = globalMiddleware({ req }).flatMap(ctx => handlerMiddleware(ctx))
+      .onComplete(
+        a,
+        async i => i,
+        onMiddlewareError
+      ).then(async t => {
+        const result = await t
+        runResponse(res, result)
+      })
+  }
