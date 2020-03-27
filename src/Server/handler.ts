@@ -12,7 +12,7 @@ export interface Context {
   req: Request
 }
 
-enum HttpMethods {
+export enum HttpMethods {
   GET = 'get',
   POST = 'post',
   PUT = 'put',
