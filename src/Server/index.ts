@@ -1,23 +1,60 @@
-import express, { Express } from 'express'
+import { Express, Response } from 'express'
 import { match } from 'path-to-regexp'
 import {
-  Context, runResponse, HttpMethods, contextHandlerM
+  Context, HttpMethods
 } from './handler'
 import {
-  Result, OK, BadRequest, InternalServerError, NotFound, httpStatus
+  Result, resultAction
 } from './result'
 import {
-  PromiseEither, peLeft, peRight, composeK
+  PromiseEither, peLeft
 } from '../PromiseEither'
 import { Right } from '../Either'
 
-type notFound = 'not found'
+export type notFound = 'not found'
 
-type httpRoutes<A extends Context> = (ctx: A) => PromiseEither<notFound | Result, Result>
-type httpApp = (ctx: Context) => Promise<Result>
+export type httpRoutes<A extends Context> = (ctx: A) => PromiseEither<notFound | Result, Result>
+export type httpApp = (ctx: Context) => Promise<Result>
+
+export const runResponse = (res: Response, result: Result) => {
+  res.set('content-type', result.contentType || 'application/json')
+  const {
+    headers, cookies, clearCookies, action
+  } = result
+  if (headers) {
+    res.set(headers)
+  }
+  if (cookies) {
+    cookies.forEach((cookie) => {
+      const { name, value, ...options } = cookie
+      res.cookie(name, value, options)
+    })
+  }
+  if (clearCookies) {
+    clearCookies.forEach((clearCookie) => {
+      const { name, ...options } = clearCookie
+      res.clearCookie(name, options)
+    })
+  }
+  if (action) {
+    const [resMethod, firstarg, options, cb] = action
+    if (resMethod === resultAction.redirect) {
+      return res[resMethod](firstarg)
+    }
+    if (resMethod === resultAction.sendFile) {
+      return res[resMethod](firstarg, options)
+    }
+    if (resMethod === resultAction.render) {
+      return res[resMethod](firstarg, options, cb)
+    }
+  }
+  res.status(result.status).send(result.body)
+}
 
 export const bindApp = (expressApp: Express, httpApp: httpApp) => {
-  expressApp.use('*', (req, res) => httpApp({ req }).then((result) => runResponse(res, result)))
+  expressApp.use('*', (req, res) => httpApp({ req }).then((result) => {
+    runResponse(res, result)
+  }))
 }
 
 export const seal = (a: httpRoutes<Context>, notFound: () => Result, onError: (e?: Error) => Result): httpApp => (ctx: Context) => a(ctx)
@@ -39,36 +76,25 @@ const matchMethodAndPath = (method: HttpMethods) => <A extends Context>(path: st
   return peLeft('not found' as notFound)
 }
 
-const get = matchMethodAndPath(HttpMethods.GET)
-const post = matchMethodAndPath(HttpMethods.POST)
-const patch = matchMethodAndPath(HttpMethods.PATCH)
-const put = matchMethodAndPath(HttpMethods.PUT)
-const del = matchMethodAndPath(HttpMethods.DELETE)
-const options = matchMethodAndPath(HttpMethods.OPTIONS)
+export const get = matchMethodAndPath(HttpMethods.GET)
+export const post = matchMethodAndPath(HttpMethods.POST)
+export const patch = matchMethodAndPath(HttpMethods.PATCH)
+export const put = matchMethodAndPath(HttpMethods.PUT)
+export const del = matchMethodAndPath(HttpMethods.DELETE)
+export const options = matchMethodAndPath(HttpMethods.OPTIONS)
 
-const combine = <A extends Context>(a: httpRoutes<A>, b: httpRoutes<A>) => (ctx: A) => PromiseEither(
-  a(ctx).__val.then(c => c.match(
-    () => b(ctx).__val,
+export const combine = <A extends Context>(...a: httpRoutes<A>[]): httpRoutes<A> => (ctx: A) => {
+  const [aa, ...as] = a
+  if (as && as.length === 0) return aa(ctx)
+  return PromiseEither(aa(ctx).__val.then(c => c.match(
+    () => combine(...as)(ctx).__val,
     () => c
-  ))
-)
-
-const authMyApp = (ctx: Context): PromiseEither<Result, Context> => {
-  if (Math.random() > 0.5) {
-    return peRight<Context>(ctx)
-  }
-  return peLeft<Result>(BadRequest({}))
+  )))
 }
 
-const composeKhandler = <A extends Context, B extends Context>(a: (_:A) => PromiseEither<Result, B>, b: (_:B) => Promise<Result>): (_:A) => Promise<Result> => (ctx: A) => a(ctx).__val.then(
+export const composeKHandler = <A extends Context, B extends Context>(a: (_:A) => PromiseEither<Result, B>, b: (_:B) => Promise<Result>): (_:A) => Promise<Result> => (ctx: A) => a(ctx).__val.then(
   c => c.match(
     y => y,
     n => b(n)
   )
 )
-
-// kleisli combinators
-
-// combineK
-// composeK
-// composeKp

@@ -1,9 +1,10 @@
 
 import { Request, Response } from 'express'
-import { PromiseEither, composeK, peRight } from '../PromiseEither'
+import { PromiseEither } from '../PromiseEither'
 import {
-  Result, resultAction, InternalServerError
+  Result, InternalServerError
 } from './result'
+import { runResponse } from './index'
 
 type middleware <A extends Context, B extends A> = (ctx: A) => PromiseEither<Result, B>
 type handler <B extends Context = Context> = (ctx: B) => Promise<Result>
@@ -29,41 +30,6 @@ interface routeHandlersObj<A extends Context> {
 }
 
 type HttpEffect<A> = Promise<void>
-
-export const runResponse = (res: Response, result: Result) => {
-  res.set('content-type', result.contentType || 'application/json')
-  const {
-    headers, cookies, clearCookies, action
-  } = result
-  if (headers) {
-    res.set(headers)
-  }
-  if (cookies) {
-    cookies.forEach((cookie) => {
-      const { name, value, ...options } = cookie
-      res.cookie(name, value, options)
-    })
-  }
-  if (clearCookies) {
-    clearCookies.forEach((clearCookie) => {
-      const { name, ...options } = clearCookie
-      res.clearCookie(name, options)
-    })
-  }
-  if (action) {
-    const [resMethod, firstarg, options, cb] = action
-    if (resMethod === resultAction.redirect) {
-      return res[resMethod](firstarg)
-    }
-    if (resMethod === resultAction.sendFile) {
-      return res[resMethod](firstarg, options)
-    }
-    if (resMethod === resultAction.render) {
-      return res[resMethod](firstarg, options, cb)
-    }
-  }
-  res.status(result.status).send(result.body)
-}
 
 export const handler = <A>(
   a: (ctx: Context) => Promise<Result<A>>

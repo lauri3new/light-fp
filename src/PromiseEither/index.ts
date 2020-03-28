@@ -1,9 +1,7 @@
 
 import { Either, Right, Left } from '../Either'
-import { Option, Some, None } from '../Option'
+import { Option } from '../Option'
 import { PromiseOption } from '../PromiseOption'
-
-// TODO: run and flatMap from Promise<Either<_,_>>
 
 export interface PromiseEither<A, B> {
   __val: Promise<Either<A, B>>
@@ -40,11 +38,6 @@ export const PromiseEither = <A, B>(val: Promise<Either<A, B>>): PromiseEither<A
   )
 })
 
-
-// export const sequence = <A, B>(as: PromiseEither<A, B>[]): PromiseEither<A, B[]> => as.reduce(
-//   (acc, item) => item.flatMap(ia => acc.flatMapF(iacc => Promise.resolve(Right([...iacc, ia])))), (PromiseEither(Promise.resolve(Right<any>([])))),
-// )
-
 export const fromEither = <E, A>(a: Either<E, A>) => PromiseEither(Promise.resolve(a))
 
 export const fromNullable = <A, B>(a: A | null | undefined) => {
@@ -75,25 +68,25 @@ export const peRight = <A>(a: A) => PromiseEither(Promise.resolve(Right(a)))
 
 type PromiseEitherK <A, B, C> = (a: (A)) => PromiseEither<B, C>
 
-export const composeK = <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>) => (d: A):PromiseEither<B | D, E> => a(d).flatMap(b)
-
-// const dabaMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A & dabaRequest> => PromiseEither(Promise.resolve(Right({
-//   ...ctx,
-//   daba: {
-//     daba: '123',
-//   },
-// })))
-
-// const loggerMiddleware = <A extends Context>(ctx: A): PromiseEither<Result, A> => PromiseEither(Promise.resolve(Right(ctx)))
-
-// const fullRoute = (ctx: Context) => composeK(dabaMiddleware, loggerMiddleware)(ctx)
-
-// const fullRouteTwo = (ctx: Context) => composeK(dabaMiddleware, composeK(loggerMiddleware, dabaMiddleware))(ctx)
-
-// const compose3 = <A, B, C, D, E, G, F, J, H> (a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>) => composeK(a, composeK(b, c))
-
-// const a = compose3(loggerMiddleware, dabaMiddleware, loggerMiddleware)
-
-// TODO: write compose as overloads
-
-// middleware makes sense.
+export function composeK <A, B, C, D, E>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>): (d: A) => PromiseEither<B | D, E>
+export function composeK <A, B, C, D, E, F, G>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>): (d: A) => PromiseEither<B | D | F, G>
+export function composeK <A, B, C, D, E, F, G, H, I>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>): (d: A) => PromiseEither<B | D | F | H, I>
+export function composeK <A, B, C, D, E, F, G, H, I, J, K>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>, e: PromiseEitherK<I, J, K>): (d: A) => PromiseEither<B | D | F | H | J, I>
+export function composeK <A, B, C, D, E, F, G, H, I, J, K, L, M>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>, e: PromiseEitherK<I, J, K>, f: PromiseEitherK<K, L, M>)
+  : (d: A) => PromiseEither<B | D | F | H | J | L, I>
+export function composeK <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>, e: PromiseEitherK<I, J, K>, f: PromiseEitherK<K, L, M>, g: PromiseEitherK<M, N, O>)
+  : (d: A) => PromiseEither<B | D | F | H | J | L | N, I>
+export function composeK <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>, e: PromiseEitherK<I, J, K>, f: PromiseEitherK<K, L, M>, g: PromiseEitherK<M, N, O>, h: PromiseEitherK<O, P, Q>)
+  : (d: A) => PromiseEither<B | D | F | H | J | L | N | P, I>
+export function composeK <A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S>(a: PromiseEitherK<A, B, C>, b: PromiseEitherK<C, D, E>, c: PromiseEitherK<E, F, G>, d: PromiseEitherK<G, H, I>, e: PromiseEitherK<I, J, K>, f: PromiseEitherK<K, L, M>, g: PromiseEitherK<M, N, O>, h: PromiseEitherK<O, P, Q>, i: PromiseEitherK<Q, R, S>)
+  : (d: A) => PromiseEither<B | D | F | H | J | L | N | P | R, I>
+export function composeK (...a: any[]): PromiseEitherK<any, any, any>
+export function composeK<A>(...as: any[]) {
+  return function (d: A) {
+    const [aa, ...aas] = as
+    if (aas && aas.length === 0) return aa(d)
+    return aa(d).flatMap(
+      composeK(...aas)
+    )
+  }
+}
