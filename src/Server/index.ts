@@ -69,7 +69,7 @@ export const seal = (a: httpRoutes<Context>, notFound: () => Result, onError: (e
     onError
   )
 
-const matchMethodAndPath = (method: HttpMethods) => <A extends Context>(path: string, handler:(_: A) => Promise<Result>) => (ctx: A): PromiseEither<notFound, Result> => {
+const matchMethodAndPath = (method: HttpMethods) => <A extends Context>(path: string, handler:(_: A) => Promise<Result>) => <B extends A>(ctx: B): PromiseEither<notFound, Result> => {
   if (match(path)(ctx.req.baseUrl) && ctx.req.method.toLowerCase() === method) {
     return PromiseEither(handler(ctx).then(Right))
   }
