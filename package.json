@@ -1,6 +1,6 @@
 {
   "name": "light-fp",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "typescript functional programming library",
   "repository": "https://github.com/lauri3new/light-fp",
   "main": "dist/index.js",
