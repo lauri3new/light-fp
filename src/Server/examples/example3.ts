@@ -4,7 +4,7 @@ import { query } from '../validations'
 import { authMiddleware } from './example2-1'
 import { composeK } from '../../PromiseEither'
 import { handlerM } from '../handler'
-import { OK } from '../result'
+import { OK, BadRequest } from '../result'
 
 const app = express()
 const router = express.Router()
@@ -14,7 +14,7 @@ const paginationParams = yup.object().shape({
   query: yup.string()
 })
 
-const validate = query(
+const validate = query(BadRequest)(
   paginationParams
 )
 

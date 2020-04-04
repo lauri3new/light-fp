@@ -15,7 +15,7 @@ const paginationParams = yup.object().shape({
   query: yup.string()
 })
 
-const validate = query(
+const validate = query(a => BadRequest({ message: a.message }))(
   paginationParams
 )
 
