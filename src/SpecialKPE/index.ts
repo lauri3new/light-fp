@@ -6,7 +6,7 @@ export interface SpecialKPE<C, E, A, I> {
   __tag: string
   map: <B>(f:(_:A) => B) => SpecialKPE<C, E, B, I>
   write: <CC>(f:(_:C) => Promise<CC>) => SpecialKPE<CC, E, A, I>
-  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E, B, I>
+  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E | EE, B, I>
   // leftMap: <EE>(f:(_:E) => EE) => SpecialKPE<C, EE, A>
   // flatMap: <G, EE, H>(f: SpecialKPE<G, EE, H>) => SpecialKPE<G, EE | E, H>
   // flatMapF: <EE, H extends object>(f:(_: A) => Promise<Either<EE, H>>) => SpecialKPE<C, EE | E, H>
@@ -26,7 +26,7 @@ export const SpecialKPE = <C, E, A, I>(val:(_: I) => Promise<[Either<E, A>, C]>)
     .then(
       ([eitherA, g]) => f(g).then((cc) => ([eitherA, cc]))
     )),
-  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E, B, I>(
+  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
@@ -35,12 +35,12 @@ export const SpecialKPE = <C, E, A, I>(val:(_: I) => Promise<[Either<E, A>, C]>)
             return r
           },
           a => {
-            const r = f(a, g).then(b => [b, g] as [Either<EE, B>, C])
+            const r = f(a, g).then(b => [b, g]) as Promise<[Either<EE, B>, C]>
             return r
           }
         )
       )
-  ),
+  )
   // write: <D>(f:(_:C) => D) => SpecialKPE<C, G, E, A>((c: C) => val(c).then(([eitherA]) => [eitherA, f(c)]))
   // mapWithCtx: <B extends object>(f:(_:A) => B) => SpecialKPE<C, E, C & B>((c: C) => val(c).then((eitherA) => eitherA.map(f).map(a => ({ ...a, ...c })))),
   // leftMap: <EE>(f: (_:E) => EE) => SpecialKPE<C, EE, A>((c: C) => val(c).then(eitherA => eitherA.leftMap(f))),
@@ -73,3 +73,5 @@ type User = {
 
 const b = SpecialKPE(async () => [Right(1), 'hello'])
   .map(a => 2)
+  .write(async g => 123)
+  .flatMapF((f, g) => )
