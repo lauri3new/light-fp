@@ -1,15 +1,14 @@
 
 import { Either, Left, Right } from '../Either'
 
-export interface SpecialKPE<C, E, A, I> {
+export interface Arrow<C, E, A, I> {
   __val: (_: I) => Promise<[Either<E, A>, C]>
   __tag: string
-  map: <B>(f:(_:A) => B) => SpecialKPE<C, E, B, I>
-  write: <CC>(f:(_:C) => Promise<CC>) => SpecialKPE<CC, E, A, I>
-  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E | EE, B, I>
-  // leftMap: <EE>(f:(_:E) => EE) => SpecialKPE<C, EE, A>
+  map: <B>(f:(_:A) => B) => Arrow<C, E, B, I>
+  write: <CC>(f:(_:C) => Promise<CC>) => Arrow<CC, E, A, I>
+  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>
+  leftMap: <EE>(f:(_:E) => EE) => Arrow<C, EE, A, I>
   // flatMap: <G, EE, H>(f: SpecialKPE<G, EE, H>) => SpecialKPE<G, EE | E, H>
-  // flatMapF: <EE, H extends object>(f:(_: A) => Promise<Either<EE, H>>) => SpecialKPE<C, EE | E, H>
   runWith: <L, M, N>(
     context: I,
     onError: (_?: Error) => N,
@@ -18,15 +17,16 @@ export interface SpecialKPE<C, E, A, I> {
   ) => Promise<L | M | N>
 }
 
-export const SpecialKPE = <C, E, A, I>(val:(_: I) => Promise<[Either<E, A>, C]>): SpecialKPE<C, E, A, I> => ({
+export const Arrow = <C, E, A, I>(val:(_: I) => Promise<[Either<E, A>, C]>): Arrow<C, E, A, I> => ({
   __val: val,
   __tag: 'SpecialKPE',
-  map: <B>(f: (_:A) => B) => SpecialKPE<C, E, B, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.map(f), g])),
-  write: <CC>(f:(_:C) => Promise<CC>) => SpecialKPE<CC, E, A, I>((c: I) => val(c)
+  map: <B>(f: (_:A) => B) => Arrow<C, E, B, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.map(f), g])),
+  leftMap: <EE>(f: (_:E) => EE) => Arrow<C, EE, B, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.leftMap(f), g])),
+  write: <CC>(f:(_:C) => Promise<CC>) => Arrow<CC, E, A, I>((c: I) => val(c)
     .then(
       ([eitherA, g]) => f(g).then((cc) => ([eitherA, cc]))
     )),
-  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => SpecialKPE<C, E | EE, B, I>(
+  flatMapF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
@@ -66,45 +66,11 @@ export const SpecialKPE = <C, E, A, I>(val:(_: I) => Promise<[Either<E, A>, C]>)
   )
 })
 
-type Service = { userService: { get: () => 2 } }
-
-const SpecialK = SpecialKPE<Service, never, number, Service>(async (c) => [Right(1), c])
-const specialK = <C>() => SpecialKPE<C, never, undefined, C>(async (cc) => [Right(undefined), cc])
-
-// specialK<Service>()
-//   .flatMapF(async (a, g) => Right(123))
+type Service = { userService: { get: () => number } }
 
 type User = {
   name: string
   id: number
 }
 
-SpecialK
-  .map((a) => {
-    console.log('hiya')
-    return a
-  })
-  .runWith(
-    { userService: { get: () => 2 } },
-    a => console.log('error', a),
-    a => console.log('success', a),
-    a => console.log('failure', a)
-  )
 
-const yela = specialK<Service>()
-  .flatMapF(async (_, ctx) => Right(ctx.userService.get()))
-
-setTimeout(() => {
-  yela.runWith(
-    { userService: { get: () => 2 } },
-    a => console.log('error', a),
-    a => console.log('success', a),
-    a => console.log('failure', a)
-  )
-}, 5000)
-
-// const b = SpecialKPE(async (c: { userService: { get: () => 2 } }) => [Right(1), c])
-//   .map(a => 2)
-//   .flatMapF(async (f, g) => Right('wasup'))
-//   .flatMapF(async (f, g) => Right(g.userService.get()))
-//   .write(async (g) => ({ ...g, mySecondService: { get: () => 214 } }))
