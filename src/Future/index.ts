@@ -6,7 +6,7 @@ export interface Future<A> {
   __val: () => Promise<A>
   map: <B>(f:(_:A) => B) => Future<B>
   flatMap: <B>(f:(_:A) => Future<B>) => Future<B>
-  run: <B>(f: (_:A) => B, g: (_?: any) => B) => Promise<B>
+  run: <B>(f: (_:A) => B, g: (_?: any) => B) => any
 }
 
 function toPromise<A>(a:Future<A>): Promise<A> {
@@ -20,7 +20,15 @@ export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   flatMap: <B>(f: (_:A) => Future<B>) => Future<B>(
     () => val().then(a => toPromise(f(a)))
   ),
-  run: <B>(f: (_:A) => B, g: (_?: any) => B): Promise<B> => val().then(a => f(a)).catch(e => g(e))
+  run: async <B>(f: (_:A) => B, g: (_?: any) => B): Promise<any> => {
+    let h = val() as any
+    while (typeof h === 'object' && typeof h.then === 'function') {
+      console.log(h)
+      h = await h
+      console.log(typeof h)
+    }
+    // return val().then(a => f(a)).catch(e => g(e))
+  }
 })
 
 const fromPromise = <A>(a:Promise<A>): Future<A> => Future(() => a)
@@ -35,10 +43,16 @@ const sleep = <A>(a: A) => new Promise((res: any) => {
   }, 5000)
 }).then(() => a)
 
-const f = resolve(1)
-  .map(a => a + 1)
-  .flatMap(a => fromPromise(sleep(a + 5)))
-  .flatMap(a => resolve(a + 5))
+let f = resolve(1)
+
+for (let i = 0; i < 100000; i += 1) {
+  f = f.flatMap(() => resolve(1))
+}
+
+f.run(
+  a => console.log(a),
+  b => console.log(b)
+)
 
 // setTimeout(() => {
 //   f.run(a => console.log('wahoo', a), b => b)
