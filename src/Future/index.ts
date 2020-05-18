@@ -23,9 +23,7 @@ export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   run: async <B>(f: (_:A) => B, g: (_?: any) => B): Promise<any> => {
     let h = val() as any
     while (typeof h === 'object' && typeof h.then === 'function') {
-      console.log(h)
       h = await h
-      console.log(typeof h)
     }
     // return val().then(a => f(a)).catch(e => g(e))
   }
@@ -42,17 +40,6 @@ const sleep = <A>(a: A) => new Promise((res: any) => {
     res()
   }, 5000)
 }).then(() => a)
-
-let f = resolve(1)
-
-for (let i = 0; i < 100000; i += 1) {
-  f = f.flatMap(() => resolve(1))
-}
-
-f.run(
-  a => console.log(a),
-  b => console.log(b)
-)
 
 // setTimeout(() => {
 //   f.run(a => console.log('wahoo', a), b => b)

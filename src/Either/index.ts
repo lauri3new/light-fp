@@ -34,16 +34,3 @@ export const fromOption = <A, B>(a: Option<A>, left?: B) => a.match(
   () => Left(left),
   someA => Right(someA)
 )
-
-const ab = Left(5)
-  .leftMap(() => 10)
-  .flatMap(
-    () => (Math.random() > 0.5 ? Right(100) : Left(1000))
-  )
-  .map(
-    a => a + 5
-  )
-  .leftMap(
-    a => a + 5
-  )
-console.log(ab.get())

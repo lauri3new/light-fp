@@ -241,18 +241,6 @@ export const combineA = <A extends Context, B, C, D>(...as: Arrow<A, B, C, D>[])
 
 const aef = ofContext<yela>().andThenF(async (_, b: naka) => Right({}))
 
-const b = sequence([hi, hi, hi])
-
-b.thenMergeCtx(
-  async a => Right({ yo: 'wasup' })
-)
-b.runWith(
-  { userService: () => 1, dabaService: () => 'he' },
-  a => console.log(a),
-  a => console.log(a),
-  a => console.log(a)
-)
-
 // const b = hi
 //   .andThenA(xhe)
 //   .runWith(
