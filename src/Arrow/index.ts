@@ -1,7 +1,19 @@
 import { Either, Left, Right } from '../Either'
+import { Context } from './Server/index'
 
 // Orthogonal
 // Composable
+type naka = { ok: number }
+type yela = { ok: 123, nok: 'xhe' }
+const af = <A, B, D>(f: (_:A) => B, g: (_:B) => D) => (v: A) => g(f(v))
+
+const toStuff = (): yela => ({ ok: 123, nok: 'xhe' })
+
+const fromSomeStuff = (a: naka) => 'hello'
+
+af(toStuff, fromSomeStuff)
+
+type Subset<T, U> = { [key in keyof T]: key extends keyof U ? T[key] : never }
 
 export interface Arrow<C, E, A, I > {
   __val: (_: I) => Promise<[Either<E, A>, C]>
@@ -9,8 +21,9 @@ export interface Arrow<C, E, A, I > {
   map: <B>(f:(_:A) => B) => Arrow<C, E, B, I>
   ctxMap: <CC >(f:(_:C) => CC) => Arrow<CC, E, A, I>
   combineA: (f:Arrow<C, E, A, I>) => Arrow<C, E, A, I>
+  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>
   andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>
-  andThen: <CC, B, EE>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>
+  andThen: <CC, B, EE, CI>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>
   flatMap: <B, EE>(f:(_:A, __:C) => Arrow<C, EE, B, I>) => Arrow<C, E | EE, B, I>
   thenChangeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => Arrow<CC, E | EE, A, I>
   thenMergeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => Arrow<CC & C, E | EE, A, I>
@@ -37,6 +50,21 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
       )
     )),
   ctxMap: <CC >(f: (_:C) => CC) => Arrow<CC, E, A, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA, f(g)])),
+  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>(
+    (c: I) => val(c)
+      .then(
+        ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
+          e => {
+            const r = Promise.resolve<[Either<E, B>, C]>([Left(e), g])
+            return r
+          },
+          a => {
+            const r = f(g).then(b => [b, g]) as Promise<[Either<EE, B>, C]>
+            return r
+          }
+        )
+      )
+  ),
   andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
@@ -52,7 +80,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  andThen: <CC, B, EE>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>(
+  andThen: <CC, B, EE, CI>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, CC]> => eitherA.match(
@@ -161,8 +189,10 @@ type With<A, B> = {
 type newType = With<'user', any>
 
 export const ofContext = <Context >(): Arrow<Context, never, undefined, Context> => Arrow(async (c: Context) => [Right(undefined), c])
+export const extendContext = <A extends Context>(): Arrow<A, never, undefined, A> => Arrow(async (c: A) => [Right(undefined), c])
 
-export const of = <Value, Context >(v: Value) => Arrow<Context, never, Value, Context>(async (c: Context) => [Right(v), c])
+
+export const of = <Value, Context>(v: Value) => Arrow<Context, never, Value, Context>(async (c: Context) => [Right(v), c])
 
 // export const fromCtx = <Context, E, nextContext>(v: (c: Context) => Promise<Either<E, nextContext>>) => Arrow<Context, E, undefined, nextContext>((_: Context) => v(_).then(eitherCtx => e))
 
@@ -200,14 +230,16 @@ const xhe = of<number, {userService:()=> number, dabaService:() => string}>(12)
   .thenChangeCtx(async (n: number, ctx: { dabaService: () => string }) => Right({ yela: 'ooh' }))
   .leftMap(a => 'wasup')
 
-const composeA = <A, B, C, D, E, F, G>(a: Arrow<A, B, C, D>, b: Arrow<E, F, G, A>) => a.andThen(b)
-const combineA = <A, B, C, D>(...as: Arrow<A, B, C, D>[]): Arrow<A, B, C, D> => {
+export const composeA = <A, B, C, D, E, F, G>(a: Arrow<A, B, C, D>, b: Arrow<E, F, G, A>) => a.andThen(b)
+
+export const combineA = <A extends Context, B, C, D>(...as: Arrow<A, B, C, D>[]): Arrow<A, B, C, D> => {
   if (as.length === 1) return as[0]
   if (as.length === 2) return as[0].combineA(as[1])
   const [a, b, ...aas] = as
   return combineA(a.combineA(b), ...as)
 }
 
+const aef = ofContext<yela>().andThenF(async (_, b: naka) => Right({}))
 
 const b = sequence([hi, hi, hi])
 
