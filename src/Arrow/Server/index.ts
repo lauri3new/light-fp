@@ -85,12 +85,6 @@ export const options = matchMethodAndPath(HttpMethods.OPTIONS)
 
 const myRoute = get<Context & { requestId: number } & hasKnex>('/hello/:id')
 
-ofContext<Context>().thenMergeCtx(async () => {
-  const a = { requestId: 3 }
-  return Right(a)
-})
-  .andThen(myRoute)
-
 type hasKnex = { knex: object }
 const theType = ofContext<Context & hasKnex>()
   .thenMergeCtx(async () => {

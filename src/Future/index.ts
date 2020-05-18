@@ -23,6 +23,7 @@ export const Future = <A>(val: () => Promise<A>): Future<A> => ({
   run: async <B>(f: (_:A) => B, g: (_?: any) => B): Promise<any> => {
     let h = val() as any
     while (typeof h === 'object' && typeof h.then === 'function') {
+      // eslint-disable-next-line no-await-in-loop
       h = await h
     }
     // return val().then(a => f(a)).catch(e => g(e))

@@ -1,6 +1,6 @@
 {
   "name": "light-fp",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "typescript functional programming library",
   "repository": "https://github.com/lauri3new/light-fp",
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
     "test": "echo \"Warn: no test specified\" && exit 0",
     "build": "tsc",
     "lint": "eslint --fix './src/**/*'",
-    "prepublishOnly": "npm test && npm run lint && npm run build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "author": "Laurence Newman",
   "license": "ISC",
