@@ -4,7 +4,7 @@ import {
   Result, resultAction, OK, NotFound
 } from './result'
 import {
-  Arrow, combineA, ofContext, of, composeA, extendContext
+  ArrowT, combineA, ofContext, of, composeA, extendContext
 } from '../index'
 import { Left, Right, Either } from '../../Either'
 import { InternalServerError } from '../../Server/result'
@@ -22,7 +22,7 @@ export enum HttpMethods {
   OPTIONS = 'options'
 }
 
-export type httpRoutes<A extends Context, B> = Arrow<B, Result, Result, A>
+export type httpRoutes<A extends Context, B> = ArrowT<B, Result, Result, A>
 export type httpApp = (ctx: Context) => Promise<Result>
 
 export const runResponse = (res: Response, result: Result) => {
@@ -66,7 +66,7 @@ export const bindApp = <A>(expressApp: Express, httpApp: httpApp) => {
   }))
 }
 
-const matchMethodAndPath = (method: HttpMethods) => <A extends Context>(path: string) => Arrow<A & { req: { params: object } }, Result, undefined, A>(
+const matchMethodAndPath = (method: HttpMethods) => <A extends Context>(path: string) => ArrowT<A & { req: { params: object } }, Result, undefined, A>(
   async (ctx: A) => {
     const _match = match(path)(ctx.req.baseUrl)
     if (_match && ctx.req.method.toLowerCase() === method) {
@@ -97,10 +97,10 @@ const theType = ofContext<Context & hasKnex>()
 // const bindAppTwo = <A extends Context, B>(a: httpRoutes<A, B>) =>
 // express App, http App, dependencies minus context, NotFound, ErrorHandler
 
-const bindAppTwo = <A, B>(expressApp: Express, a: httpRoutes<A & Context, B>, dependencies: A, onError: (e?: Error) => Result) => {
-  expressApp.use('*', (req, res) => a.runWith({ req, ...dependencies },
-    result => result,
-    result => result,
-    onError)
-    .then(result => runResponse(res, result)))
-}
+// const bindAppTwo = <A, B>(expressApp: Express, a: httpRoutes<A & Context, B>, dependencies: A, onError: (e?: Error) => Result) => {
+//   expressApp.use('*', (req, res) => a.runWith({ req, ...dependencies },
+//     result => result,
+//     result => result,
+//     onError)
+//     .then(result => runResponse(res, result)))
+// }

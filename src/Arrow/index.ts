@@ -15,20 +15,20 @@ af(toStuff, fromSomeStuff)
 
 type Subset<T, U> = { [key in keyof T]: key extends keyof U ? T[key] : never }
 
-export interface Arrow<C, E, A, I > {
+export interface ArrowT<C, E, A, I > {
   __val: (_: I) => Promise<[Either<E, A>, C]>
   __tag: string
-  map: <B>(f:(_:A) => B) => Arrow<C, E, B, I>
-  ctxMap: <CC >(f:(_:C) => CC) => Arrow<CC, E, A, I>
-  combineA: (f:Arrow<C, E, A, I>) => Arrow<C, E, A, I>
-  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>
-  andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>
-  andThen: <CC, B, EE, CI>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>
-  flatMap: <B, EE>(f:(_:A, __:C) => Arrow<C, EE, B, I>) => Arrow<C, E | EE, B, I>
-  thenChangeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => Arrow<CC, E | EE, A, I>
-  thenMergeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => Arrow<CC & C, E | EE, A, I>
-  leftMap: <EE>(f:(_:E) => EE) => Arrow<C, EE, A, I>
-  leftMapP: <EE>(f:(_:E, __:I) => Promise<EE>) => Arrow<I, EE, A, I>
+  map: <B>(f:(_:A) => B) => ArrowT<C, E, B, I>
+  ctxMap: <CC >(f:(_:C) => CC) => ArrowT<CC, E, A, I>
+  combineA: (f:ArrowT<C, E, A, I>) => ArrowT<C, E, A, I>
+  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => ArrowT<C, E | EE, B, I>
+  andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => ArrowT<C, E | EE, B, I>
+  andThen: <CC, B, EE, CI>(f:ArrowT<CC, EE, B, C>) => ArrowT<CC, E | EE, B, I>
+  flatMap: <B, EE>(f:(_:A, __:C) => ArrowT<C, EE, B, I>) => ArrowT<C, E | EE, B, I>
+  thenChangeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => ArrowT<CC, E | EE, A, I>
+  thenMergeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => ArrowT<CC & C, E | EE, A, I>
+  leftMap: <EE>(f:(_:E) => EE) => ArrowT<C, EE, A, I>
+  leftMapP: <EE>(f:(_:E, __:I) => Promise<EE>) => ArrowT<I, EE, A, I>
   runWith: <L, M, N>(
     c: I,
     f: (_:A) => L,
@@ -37,20 +37,20 @@ export interface Arrow<C, E, A, I > {
   ) => Promise<L | M | N>
 }
 
-export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Arrow<C, E, A, I> => ({
+export const ArrowT = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): ArrowT<C, E, A, I> => ({
   __val: val,
-  __tag: 'Arrow',
-  map: <B>(f: (_:A) => B) => Arrow<C, E, B, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.map(f), g])),
-  leftMap: <EE>(f: (_:E) => EE) => Arrow<C, EE, A, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.leftMap(f), g])),
-  leftMapP: <EE>(f:(_:E, __: I) => Promise<EE>) => Arrow<I, EE, A, I>((c: I) => val(c)
+  __tag: 'ArrowT',
+  map: <B>(f: (_:A) => B) => ArrowT<C, E, B, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.map(f), g])),
+  leftMap: <EE>(f: (_:E) => EE) => ArrowT<C, EE, A, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA.leftMap(f), g])),
+  leftMapP: <EE>(f:(_:E, __: I) => Promise<EE>) => ArrowT<I, EE, A, I>((c: I) => val(c)
     .then(
       ([eitherA]): Promise<[Either<EE, A>, I]> => eitherA.match(
         left => f(left, c).then(res => [Left(res), c] as [Left<EE>, I]),
         async right => [Right(right), c] as [Right<A>, I]
       )
     )),
-  ctxMap: <CC >(f: (_:C) => CC) => Arrow<CC, E, A, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA, f(g)])),
-  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>(
+  ctxMap: <CC >(f: (_:C) => CC) => ArrowT<CC, E, A, I>((c: I) => val(c).then(([eitherA, g]) => [eitherA, f(g)])),
+  andThenCtxF: <B, EE>(f:(__:C) => Promise<Either<E | EE, B>>) => ArrowT<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
@@ -65,7 +65,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => Arrow<C, E | EE, B, I>(
+  andThenF: <B, EE>(f:(_:A, __:C) => Promise<Either<E | EE, B>>) => ArrowT<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
@@ -80,7 +80,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  andThen: <CC, B, EE, CI>(f:Arrow<CC, EE, B, C>) => Arrow<CC, E | EE, B, I>(
+  andThen: <CC, B, EE, CI>(f:ArrowT<CC, EE, B, C>) => ArrowT<CC, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, CC]> => eitherA.match(
@@ -95,7 +95,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  combineA: (f:Arrow<C, E, A, I>) => Arrow<C, E, A, I>(
+  combineA: (f:ArrowT<C, E, A, I>) => ArrowT<C, E, A, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]) => eitherA.match(
@@ -104,7 +104,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  thenChangeCtx: <CC, EE>(f:(_:A, __:C) => Promise<Either<E | EE, CC>>) => Arrow<CC, E | EE, A, I>(
+  thenChangeCtx: <CC, EE>(f:(_:A, __:C) => Promise<Either<E | EE, CC>>) => ArrowT<CC, E | EE, A, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, A>, CC]> => eitherA.match(
@@ -122,7 +122,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  thenMergeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => Arrow<CC & C, E | EE, A, I>(
+  thenMergeCtx: <EE, CC >(f:(_:A, __:C) => Promise<Either<EE, CC>>) => ArrowT<CC & C, E | EE, A, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, A>, CC & C]> => eitherA.match(
@@ -140,7 +140,7 @@ export const Arrow = <C, E, A, I >(val:(_: I) => Promise<[Either<E, A>, C]>): Ar
         )
       )
   ),
-  flatMap: <B, EE>(f:(_:A, __:C) => Arrow<C, EE, B, I>) => Arrow<C, E | EE, B, I>(
+  flatMap: <B, EE>(f:(_:A, __:C) => ArrowT<C, EE, B, I>) => ArrowT<C, E | EE, B, I>(
     (c: I) => val(c)
       .then(
         ([eitherA, g]): Promise<[Either<E | EE, B>, C]> => eitherA.match(
@@ -188,22 +188,22 @@ type With<A, B> = {
 
 type newType = With<'user', any>
 
-export const ofContext = <Context >(): Arrow<Context, never, undefined, Context> => Arrow(async (c: Context) => [Right(undefined), c])
-export const extendContext = <A extends Context>(): Arrow<A, never, undefined, A> => Arrow(async (c: A) => [Right(undefined), c])
+export const ofContext = <Context >(): ArrowT<Context, never, undefined, Context> => ArrowT(async (c: Context) => [Right(undefined), c])
+export const extendContext = <A extends Context>(): ArrowT<A, never, undefined, A> => ArrowT(async (c: A) => [Right(undefined), c])
 
 
-export const of = <Value, Context>(v: Value) => Arrow<Context, never, Value, Context>(async (c: Context) => [Right(v), c])
+export const of = <Value, Context>(v: Value) => ArrowT<Context, never, Value, Context>(async (c: Context) => [Right(v), c])
 
-// export const fromCtx = <Context, E, nextContext>(v: (c: Context) => Promise<Either<E, nextContext>>) => Arrow<Context, E, undefined, nextContext>((_: Context) => v(_).then(eitherCtx => e))
+// export const fromCtx = <Context, E, nextContext>(v: (c: Context) => Promise<Either<E, nextContext>>) => ArrowT<Context, E, undefined, nextContext>((_: Context) => v(_).then(eitherCtx => e))
 
-export const fromEither = <E, A, Context = {}>(eitherA: Either<E, A>) => Arrow<Context, E, A, Context>(async (c: Context) => [eitherA, c])
+export const fromEither = <E, A, Context = {}>(eitherA: Either<E, A>) => ArrowT<Context, E, A, Context>(async (c: Context) => [eitherA, c])
 
-export const fromPromise = <E, A, Context = {}>(eitherA: Promise<A>) => Arrow<Context, E, A, Context>((c: Context): Promise<[Either<E, A>, Context]> => eitherA.then(a => [Right(a), c] as [Right<A>, Context]).catch((e: E) => [Left(e), c]))
+export const fromPromise = <E, A, Context = {}>(eitherA: Promise<A>) => ArrowT<Context, E, A, Context>((c: Context): Promise<[Either<E, A>, Context]> => eitherA.then(a => [Right(a), c] as [Right<A>, Context]).catch((e: E) => [Left(e), c]))
 
-export const fromPEither = <E, A, Context = {}>(eitherA: Promise<Either<E, A>>) => Arrow<Context, E, A, Context>((c: Context) => eitherA.then(a => [a, c]))
+export const fromPEither = <E, A, Context = {}>(eitherA: Promise<Either<E, A>>) => ArrowT<Context, E, A, Context>((c: Context) => eitherA.then(a => [a, c]))
 
-export const sequence = <A, B, C, D >(as: Arrow<A, B, C, D>[]): Arrow<A, B, C[], D> => as.reduce(
-  (acc, arrowA) => acc.flatMap((a, _) => arrowA.map(c => [...a, c])), Arrow<A, B, C[], D>(async (ctx: D) => [Right<C[], B>([]), ctx as unknown as A])
+export const sequence = <A, B, C, D >(as: ArrowT<A, B, C, D>[]): ArrowT<A, B, C[], D> => as.reduce(
+  (acc, arrowA) => acc.flatMap((a, _) => arrowA.map(c => [...a, c])), ArrowT<A, B, C[], D>(async (ctx: D) => [Right<C[], B>([]), ctx as unknown as A])
 )
 
 const getUser = (service: Service) => service.userService.get()
@@ -215,7 +215,7 @@ const getUser = (service: Service) => service.userService.get()
 // tap
 // type alias <A,B,C,D> to <A,B,C>
 
-// bimap? whats this zip? zip is Arrow<Ctx, E, A>.zip(Arrow<Ctx, E, A>): Arrow<Ctx, E, [A, B]>
+// bimap? whats this zip? zip is ArrowT<Ctx, E, A>.zip(ArrowT<Ctx, E, A>): ArrowT<Ctx, E, [A, B]>
 // more constructors - promise, function, either...
 // sequence? or not... sequence is bimap?
 // clone?
@@ -227,19 +227,25 @@ const hi = of<number, {userService:()=> number, dabaService:() => string}>(12)
 
 const xhe = of<number, {userService:()=> number, dabaService:() => string}>(12)
   .andThenF(async (n: number, ctx: { userService: () => number }) => Right(n * 5))
-  .thenChangeCtx(async (n: number, ctx: { dabaService: () => string }) => Right({ yela: 'ooh' }))
+  .thenMergeCtx(async (n: number, ctx: { dabaService: () => string }) => Right({ yela: 'ooh' }))
   .leftMap(a => 'wasup')
 
-export const composeA = <A, B, C, D, E, F, G>(a: Arrow<A, B, C, D>, b: Arrow<E, F, G, A>) => a.andThen(b)
+export const composeA = <A, B, C, D, E, F, G>(a: ArrowT<A, B, C, D>, b: ArrowT<E, F, G, A>) => a.andThen(b)
 
-export const combineA = <A extends Context, B, C, D>(...as: Arrow<A, B, C, D>[]): Arrow<A, B, C, D> => {
+export const combineA = <A extends Context, B, C, D>(...as: ArrowT<A, B, C, D>[]): ArrowT<A, B, C, D> => {
   if (as.length === 1) return as[0]
   if (as.length === 2) return as[0].combineA(as[1])
   const [a, b, ...aas] = as
   return combineA(a.combineA(b), ...as)
 }
 
-const aef = ofContext<yela>().andThenF(async (_, b: naka) => Right({}))
+const aef = ofContext<yela>()
+
+const baf = <A extends { ok: number }>() => of<number, A>(5).ctxMap((a) => ({ ...a, xhama: 234 }))
+
+aef.andThen(baf())
+
+// .andThenF(async (_, b: naka) => Righst({}))
 
 // const b = hi
 //   .andThenA(xhe)
@@ -257,3 +263,55 @@ type IUser = {
 type firebase = {
   firebase: { validate: (_: number) => IUser }
 }
+
+// export const composeKHandler = <A extends Context, B extends Context, C extends Context>(a: ArrowT<B, Context, Context, A>, b: ArrowT<C, Context, Context, B>): ArrowT<C, Context, Context, A> => b.andThen(b)
+
+const ga = (a: string) => Promise.resolve({ ok: 123, xhaba: 234 })
+const gb = (a: { ok: number }) => Promise.resolve('daba')
+const gc = (a: string) => Promise.resolve('daba')
+
+const composekleisli = <A, B, C>(a: (_:A) => Promise<B>, b: (_:B) => Promise<C>) => (aa: A) => a(aa).then(b)
+
+const yelal = composekleisli(ga, gb)
+
+interface Arrow<S, E, Sout> {
+  __val: (_:S) => Promise<Either<E, Sout>>
+  andThen:<E2, S2Out>(_: Arrow<Sout, E | E2, S2Out>) => Arrow<S, E | E2, S2Out>
+  andThenMerge:<C>(_: Arrow<B, C>) => kleisli<A, B & C>
+  andThenF: <C>(f: (_:B) => Promise<C>) => kleisli<A, C>
+}
+
+// const kleisli = <A, B>(a: (_:A) => Promise<B>) => ({
+//   __val: a,
+//   andThen: <C>(f: kleisli<B, C>) => kleisli(
+//     (ab: A) => a(ab).then(n => f.__val(n))
+//   ),
+//   andThenF: <C>(f: (_:B) => Promise<C>) => kleisli(
+//     (ab: A) => a(ab).then(n => f(n))
+//   ),
+//   andThenMerge: <C>(f: kleisli<B, C>) => kleisli<A, B & C>(
+//     (ab: A) => a(ab).then(n => f.__val(n).then(cc => ({ ...cc, ...n })))
+//   ),
+//   runWith: (yela: A) => a(yela)
+// })
+
+// const addUser = <A extends { ok: number }>() => kleisli(async (c: A) => ({ user: 'wasup', ...c }))
+
+// const addUserTwo = <A extends { ok: number }>() => kleisli(async (c: A) => ({ user: 'wasup' }))
+
+// const knakajee = kleisli(ga).andThenMerge(addUserTwo())
+
+// .andThen(addUser()).andThenF()
+
+// interface kleisliS<SI, A, SO> {
+//   __val: (_:SI) => Promise<[A, SO]>
+//   andThen:<B, SOO>(_: kleisliS<SO, B, SOO>) => kleisliS<SI, B, SOO>
+// }
+
+// const kleisliS = <SI, A, SO>(a: (_:SI) => Promise<[A, SO]>) => ({
+//   __val: a,
+//   andThen: <B, SOO>(f: kleisliS<SO, B, SOO>) => kleisli(
+//     (ab: SI) => a(ab).then(n => f.__val())
+//   ),
+//   runWith: (yela: A) => a(yela)
+// })
